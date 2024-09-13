@@ -13,11 +13,6 @@
 <script setup name="App" lang="ts">
 import { onMounted, reactive } from "vue";
 import * as echarts from "echarts";
-import { useCarTypeStore } from "../stores/cartype";
-
-const cartypeStore = useCarTypeStore();
-
-const { carTypeList, getAllCarType } = cartypeStore;
 
 var carTypeInfoList = reactive([]);
 
@@ -45,20 +40,20 @@ onMounted(async () => {
     const myChart1 = echarts.init(chartDom1);
 
     const option = {
-  xAxis: {
-    type: 'category',
-    data: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
-  },
-  yAxis: {
-    type: 'value'
-  },
-  series: [
-    {
-      data: [150, 230, 224, 218, 135, 147, 260],
-      type: 'line'
-    }
-  ]
-};
+      xAxis: {
+        type: 'category',
+        data: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
+      },
+      yAxis: {
+        type: 'value'
+      },
+      series: [
+        {
+          data: [150, 230, 224, 218, 135, 147, 260],
+          type: 'line'
+        }
+      ]
+    };
     // 设置图表的配置项和数据
     myChart.setOption(option);
     myChart1.setOption(option);
@@ -68,11 +63,9 @@ onMounted(async () => {
   
   
 <style scoped>
-
 .aside-menu {
-  height: 100vh; 
+  height: 100vh;
   width: 100%;
   overflow-y: auto; /* 允许垂直滚动 */
 }
-
 </style>

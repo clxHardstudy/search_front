@@ -8,7 +8,7 @@
     active-text-color="#ffd04b"
     @select="handleSelect"
   >
-    <el-menu-item index="1">Chery</el-menu-item>
+    <el-menu-item index="1" @click="fetchVerticalParallelARBConnected">Chery</el-menu-item>
 
     <el-sub-menu index="2">
       <!-- 使用计算属性动态显示标题 -->
@@ -19,7 +19,7 @@
         v-show="isPlatformList"
         v-for="platform in PlatFormList"
         :key="platform.id"
-        :index="platform.id"
+        :index="String(platform.id)"
         @click="selectPlatform(platform)"
       >
         {{ platform.platform }}
@@ -30,10 +30,10 @@
         v-show="isCarTypeList"
         v-for="carType in carTypeList"
         :key="carType.id"
-        :index="carType.id"
+        :index="String(carType.id)"
         @click="selectCarType(carType)"
       >
-        {{ carType.cartype }}
+        {{ carType.name }}
       </el-menu-item>
     </el-sub-menu>
 
@@ -46,13 +46,15 @@
 </template>
 
 <script lang="ts" setup>
-import { useCarTypeStore } from "../stores/cartype";
 import { ref, computed, onMounted, watch } from "vue";
+import { useCarBaseInfoStore } from "../stores/carbaseinfo";
+import { useCarTypeStore } from "../stores/cartype";
+import { useVerticalParallelARBConnectedStore } from "../stores/vertical_parallel_arb_connected";
 
 // 定义props
 const props = defineProps<{
   PlatFormList?: Array<{ id: string; platform: string }>;
-  carTypeList?: Array<{ id: string; cartype: string }>;
+  carTypeList?: Array<{ id: string; name: string }>;
 }>();
 
 const activeIndex2 = ref("1");
@@ -60,8 +62,13 @@ const selectedName = ref(""); // 存储选中的平台或车型名称
 const selectedId = ref<string | null>(null); // 存储选中的id
 
 // 引入 Pinia Store
+const carBaseInfoStore = useCarBaseInfoStore();
 const carTypeStore = useCarTypeStore();
-const { carTypeList, carTypeInfoList, getCarOrSUV } = carTypeStore;
+const verticalParallelARBConnectedStore = useVerticalParallelARBConnectedStore();
+
+const { carBaseInfoList, getCarOrSUV } = carBaseInfoStore;
+const { carTypeList, getCarType } = carTypeStore;
+const { verticalParallelARBConnectedList, getVerticalParallelARBConnected } = verticalParallelARBConnectedStore;
 
 // 计算属性，用于动态确定标题
 const menuTitle = computed(() => {
@@ -103,15 +110,22 @@ function selectPlatform(platform: { id: string; platform: string }) {
 }
 
 // 选择车型
-function selectCarType(carType: { id: string; cartype: string }) {
-  selectedName.value = carType.cartype;
+function selectCarType(carType: { id: string; name: string }) {
+  selectedName.value = carType.name;
   selectedId.value = carType.id;
   console.log("选中的车型ID:", selectedId.value, selectedName.value); // 输出选中的车型 ID
+  fetchVerticalParallelARBConnected(); // 调用数据请求函数
 }
 
-// 在组件加载时调用 getCarOrSUV，并将数据存入 carTypeInfoList
+// 在组件加载时调用 getCarOrSUV，并将数据存入 carBaseInfoList
 onMounted(async () => {
   await fetchData();
+  // 获取车型数据
+  const data = await getCarType();
+  // 按照 id 从小到大排序
+  data.sort((x: any, y: any) => Number(x.id) - Number(y.id));
+  // 更新 store 中的 carTypeList
+  carTypeStore.carTypeList.splice(0, carTypeStore.carTypeList.length, ...data);
 });
 
 // 监听 selectedId 的变化并触发数据请求
@@ -125,21 +139,29 @@ watch(selectedId, async (newId) => {
 async function fetchData() {
   try {
     if (selectedId.value) {
-      // 清空 carTypeInfoList 以确保数据是最新的
-      carTypeInfoList.length = 0;
-      
+      // 清空 carBaseInfoList 以确保数据是最新的
+      carBaseInfoStore.carBaseInfoList.length = 0;
+
       const data = await getCarOrSUV({ id: selectedId.value });
 
       // 确保 data 是数组并且不为 undefined
       if (Array.isArray(data)) {
-        carTypeInfoList.push(...data); // 将返回数据添加到 carTypeInfoList
-        console.log("更新后的车型数据:", carTypeInfoList);
+        carBaseInfoStore.carBaseInfoList.push(...data); // 将返回数据添加到 carBaseInfoList
+        console.log("更新后的车型数据:", carBaseInfoList);
       } else {
         console.warn("请求返回的数据不是数组或是 undefined:", data);
       }
     }
   } catch (error) {
     console.error("Error fetching car types:", error);
+  }
+}
+
+// 定义函数来调用 getVerticalParallelARBConnected 并更新列表
+async function fetchVerticalParallelARBConnected() {
+  if (selectedId.value) {
+    await getVerticalParallelARBConnected(Number(selectedId.value));
+    console.log("更新后的 verticalParallelARBConnectedList:", verticalParallelARBConnectedList.value);
   }
 }
 </script>

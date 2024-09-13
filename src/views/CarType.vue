@@ -10,7 +10,7 @@
         </el-header>
 
         <el-main class="right-main">
-          <common-car-type />
+          <common-car-base-info />
         </el-main>
       </el-container>
     </el-container>
@@ -22,12 +22,11 @@ import { storeToRefs } from "pinia";
 
 import CommonAside from "../components/CommonAside.vue";
 import CommonHeader from "../components/CommonHeader.vue";
-// import CommonMain from "../components/CommonMain.vue";
-import CommonCarType from "../components/CommonCarType.vue";
-
+import CommonCarBaseInfo from "../components/CommonCarBaseInfo.vue";
 import { useCarTypeStore } from "../stores/cartype";
 
 const carTypeStore = useCarTypeStore();
+// carTypeList 汽车类别：suv、轿车...
 const { carTypeList } = storeToRefs(carTypeStore);
 </script>
     

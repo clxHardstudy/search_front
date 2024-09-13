@@ -31,3 +31,9 @@ npm run dev
 ```sh
 npm run build
 ```
+
+npm i vite-plugin-vue-setup-extend -D
+element plus
+echarts
+axios
+pinia
