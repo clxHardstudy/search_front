@@ -32,8 +32,12 @@ npm run dev
 npm run build
 ```
 
-npm i vite-plugin-vue-setup-extend -D
-element plus
-echarts
-axios
-pinia
+
+### 环境配置
+
+$ npm install 
+$ npm i vite-plugin-vue-setup-extend -D
+$ npm install element-plus --save
+$ npm install echarts
+$ npm install axios
+$ npm install pinia

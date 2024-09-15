@@ -17,12 +17,12 @@
         </el-menu-item>
       </router-link>
 
-      <router-link to="/platform">
+      <!-- <router-link to="/platform">
         <el-menu-item index="/platform">
           <platform-icon/>
           <span>平台管理</span>
         </el-menu-item>
-      </router-link>
+      </router-link> -->
 
       <router-link to="/cartype">
         <el-menu-item index="/cartype">

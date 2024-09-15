@@ -24,7 +24,7 @@ interface verticalParallelARBConnected {
 
 export const useVerticalParallelARBConnectedStore = defineStore('verticalParallelARBConnected', () => {
     // 使用 CarType 类型定义 carTypeList
-    const verticalParallelARBConnectedList = ref<verticalParallelARBConnected[]>([]);
+    const verticalParallelARBConnectedList = reactive<verticalParallelARBConnected[]>([]);
 
     async function getVerticalParallelARBConnected(item_id: number) {
         try {
@@ -32,7 +32,7 @@ export const useVerticalParallelARBConnectedStore = defineStore('verticalParalle
             let result = await axios.get(
                 `http://127.0.0.1:8000/vertical_parallel_arb_connected/car_type/${item_id}`
             );
-            console.log(result.data);
+            // console.log(result.data);
             return result.data;
         } catch (error) {
             console.error("Error fetching data:", error); // 使用 console.error 记录错误详情

@@ -24,6 +24,5 @@ export const useCarTypeStore = defineStore('cartype', () => {
         }
     }
 
-
-    return { carTypeList, getCarType}
+    return { carTypeList, getCarType }
 })

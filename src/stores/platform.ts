@@ -1,17 +1,21 @@
 import { ref, computed, reactive } from 'vue'
 import { defineStore } from 'pinia'
 
+interface PlatForm {
+    id: string;
+    name: string;
+}
 export const usePlatformStore = defineStore('platform', () => {
-    const platformList = reactive([
-        { id: "1-1", platform: 'T1X' },
-        { id: "1-2", platform: 'T2X' },
-        { id: "1-3", platform: 'T3X' },
-        { id: "1-4", platform: 'T4X' },
-        { id: "1-5", platform: 'T5X' },
-        { id: "1-6", platform: 'T6X' },
-        { id: "1-7", platform: 'T7X' },
-        { id: "1-8", platform: 'T8X' },
-        { id: "1-9", platform: 'T9X' },
+    const platformList = ref<PlatForm[]>([
+        { id: "1", name: 'T1X' },
+        { id: "2", name: 'T2X' },
+        { id: "3", name: 'T3X' },
+        { id: "4", name: 'T4X' },
+        { id: "5", name: 'T5X' },
+        { id: "6", name: 'T6X' },
+        { id: "7", name: 'T7X' },
+        { id: "8", name: 'T8X' },
+        { id: "9", name: 'T9X' },
     ])
 
     return { platformList }
