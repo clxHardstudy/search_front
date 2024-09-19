@@ -24,20 +24,66 @@
       </el-table>
     </div>
 
-    <!-- <div class="chart-area">
-        <div id="bubble-chart" class="chart-container">
+    <el-divider />
+
+    <!-- 工作条件区域 -->
+    <div class="working-conditions">
+      <el-form :model="formWorkingConditions" label-width="auto" class="flex-container">
+        <!-- 左侧部分 -->
+        <div class="left-column">
+          <el-form-item label="坐标">
+            <el-select v-model="formWorkingConditions.coordinate" placeholder="选择坐标系" style="width: 60%;">
+              <el-option label="前" value="0" />
+              <el-option label="后" value="1" />
+            </el-select>
+          </el-form-item>
+
+          <el-form-item label="工况">
+            <el-checkbox-group v-model="formWorkingConditions.WorkingConditions">
+              <el-checkbox v-for="condition in workingConditionsList" :key="condition.id" :value="condition.id">
+                {{ condition.name }}
+              </el-checkbox>
+            </el-checkbox-group>
+          </el-form-item>
         </div>
-      </div> -->
+
+        <!-- 右侧部分：工况详细，动态设置高度 -->
+        <div class="right-column" :style="{ maxHeight: leftColumnHeight + 'px', overflowY: 'auto' }">
+          <el-form-item label="工况详细">
+            <div v-for="detail in selectedConditionsDetails" :key="detail.id">
+              {{ detail.name }}
+              <el-checkbox-group v-model="formWorkingConditions.WorkingConditionsDetail">
+                <el-checkbox v-for="workingConditionsDetail in workingConditionsDetailObj[detail.id]"
+                  :key="workingConditionsDetail.id" :value="`${detail.id}-${workingConditionsDetail.id}`">
+                  {{ workingConditionsDetail.name }}
+                </el-checkbox>
+              </el-checkbox-group>
+            </div>
+          </el-form-item>
+        </div>
+      </el-form>
+
+      <!-- 提交按钮在整体下方 -->
+      <div class="form-actions">
+        <el-button type="primary" @click="onSubmitWorkingConditions"
+          :loading="isLoadingWorkingConditions">查询</el-button>
+      </div>
+    </div>
+
+
+
   </div>
 </template>
 
 <script lang="ts" setup>
-import { computed, reactive, onMounted, watch, ref } from "vue";
+import { computed, reactive, onMounted, watch, ref, nextTick } from "vue";
 import { useCarBaseInfoStore } from "../stores/carbaseinfo"; // 确保导入路径正确
-import * as echarts from 'echarts';
 import { storeToRefs } from "pinia";
+import { useWorkingConditionsStore } from "../stores/workingconditions";
 
-
+const workingConditionsStore = useWorkingConditionsStore()
+const { workingConditionsList } = storeToRefs(workingConditionsStore)
+const { getWorkingConditions, getWorkingConditionDetail, getWorkingConditionDetailTitle } = workingConditionsStore
 // 使用 CarBaseInfoStore
 const carBaseInfoStore = useCarBaseInfoStore();
 const { carBaseInfoList, searchCarOrSUV, searchCarByWheelbase, searchCarByNameAndWheelbase } = carBaseInfoStore;
@@ -57,6 +103,7 @@ const formInline = reactive({
 });
 
 const isLoading = ref(false); // 定义 isLoading 状态
+const isLoadingWorkingConditions = ref(false); // 定义 isLoading 状态
 const onSubmit = async () => {
   try {
     isLoading.value = true; // 开始加载，设置为 true
@@ -92,86 +139,111 @@ const onSubmit = async () => {
   }
 };
 
-// ECharts 图表初始化和响应式更新
-let myChart_bubble_chart: any;
 
-onMounted(() => {
-  // 初始化 ECharts 实例
-  const chartDom = document.getElementById("bubble-chart");
-  if (chartDom) {
-    myChart_bubble_chart = echarts.init(chartDom);
-    updateChart(); // 初始化时绘制图表
+const leftColumnHeight = ref(0);
+
+onMounted(async () => {
+  const data = await getWorkingConditions();
+  // 按照 id 从小到大排序
+  data.sort((x: any, y: any) => Number(x.id) - Number(y.id));
+  // 更新 store 中的 workingConditionsList
+  workingConditionsList.value.splice(0, workingConditionsList.value.length, ...data);
+
+  console.log("workingConditionsList.value", workingConditionsList.value)
+  // 所有工况表中的参数
+  const kcTitleObj = await getWorkingConditionDetailTitle({ working_conditions_list: working_conditions_list.value })
+  console.log("kcTitleObj", kcTitleObj)
+
+  // 等待组件渲染完成，确保DOM已更新
+  await nextTick();
+
+  const leftColumnEl = document.querySelector(".left-column");
+  if (leftColumnEl) {
+    // 获取左侧盒子的实际高度
+    leftColumnHeight.value = leftColumnEl.scrollHeight;
   }
 });
 
-// 监控 carBaseInfoList 的变化以更新图表
+
+// 工况div
+const formWorkingConditions = reactive({
+  coordinate: '',
+  WorkingConditions: [],
+  WorkingConditionsDetail: [],
+})
+
+
+// 获取 carBaseInfoList 中所有数据的 id 并放到 car_id_list 中
+const car_id_list = computed(() => {
+  return carBaseInfoList.map((car) => car.id);
+});
+
+// 获取 workingConditionsList 中所有数据的 id 并放到 working_conditions_list 中  将工况表中的id汇总
+const working_conditions_list = computed(() => {
+  return workingConditionsList.value.map((workingConditions) => workingConditions.id);
+});
+
+const workingConditionsDetailObj = ref<{ [key: number]: { id: number; name: string; name_en: string }[] }>({});
+const selectedConditionsDetails = ref<{ id: number; name: string; name_en: string }[]>([]);
+
+// 当工况发生变化时，更新工况详细
 watch(
-  () => carBaseInfoList,
-  () => {
-    updateChart(); // 数据变化时更新图表
+  () => formWorkingConditions.WorkingConditions,
+  async (newSelectedConditions, oldSelectedConditions = []) => {
+    console.log("newSelectedConditions", newSelectedConditions)
+    // 找出被取消的工况
+    const deselectedConditions = oldSelectedConditions.filter(id => !newSelectedConditions.includes(id));
+    // 清除取消勾选的工况对应的工况详细
+    if (deselectedConditions.length) {
+      formWorkingConditions.WorkingConditionsDetail = formWorkingConditions.WorkingConditionsDetail.filter(
+        (detailId) => !deselectedConditions.some(
+          deselectedId => String(detailId).startsWith(`${deselectedId}-`)
+        )
+      );
+    }
+    try {
+      selectedConditionsDetails.value = newSelectedConditions.map((conditionId) => {
+        // 根据选中的工况 id 查找对应的工况
+        const foundCondition = workingConditionsList.value.find((condition) => condition.id === conditionId);
+        // 返回对象，包含 id, name, name_en
+        return foundCondition ? { id: foundCondition.id, name: foundCondition.name, name_en: foundCondition.name_en } : null;
+      }).filter((condition): condition is { id: number; name: string; name_en: string } => condition !== null);
+      // console.log("已选中的工况详情：", selectedConditionsDetails);
+      // 当工况变化时，请求获取工况详细
+      const response = await getWorkingConditionDetailTitle({
+        working_conditions_list: newSelectedConditions,
+      });
+      // console.log("response", response)
+      // 获取工况详细标题并更新 workingConditionsDetailList
+      workingConditionsDetailObj.value = response;
+      console.log("workingConditionsDetailList.value", workingConditionsDetailObj.value)
+    } catch (error) {
+      console.error("Error fetching working condition detail titles:", error);
+    }
   },
-  { deep: true } // 深度监控对象内部变化
+  { immediate: true } // 立即执行一次，以确保初次渲染时也能获取数据
 );
 
-function updateChart() {
-  if (!myChart_bubble_chart) return;
 
-  // 将 carBaseInfoList 转换为 ECharts 数据格式
-  const chartData = carBaseInfoList.map(car => [car.name, car.wheelbase, car.wheelbase]);
+// 根据现存的汽车id去获取 勾选工况的KC参数
+const onSubmitWorkingConditions = async () => {
+  try {
+    isLoadingWorkingConditions.value = true; // 开始加载，设置为 true
+    // console.log(formWorkingConditions)
+    const data = await getWorkingConditionDetail({
+      car_id_list: car_id_list.value,
+      coordinate_system: formWorkingConditions.coordinate,
+      working_conditions_list: formWorkingConditions.WorkingConditions
+    })
+    console.log(data)
+  } catch (error) {
+    console.error("Error fetching car types:", error);
+  } finally {
+    isLoadingWorkingConditions.value = false; // 加载完成，设置为 false
+  }
+};
 
-  // ECharts 配置
-  const option = {
-    title: {
-      text: '车型-轴距',
-      left: 'center',
-      top: '3%'
-    },
-    xAxis: {
-      type: 'category',
-      name: '车型名称',
-      data: carBaseInfoList.map(car => car.name),
-      splitLine: { lineStyle: { type: 'dashed' } }
-    },
-    yAxis: {
-      type: 'value',
-      name: '轴距',
-      splitLine: { lineStyle: { type: 'dashed' } },
-      scale: true
-    },
-    series: [
-      {
-        name: 'Car Types',
-        type: 'scatter',
-        data: chartData,
-        symbolSize: function (data: any) {
-          return Math.sqrt(data[2]) / 2; // 根据轴距调整气泡大小
-        },
-        emphasis: {
-          focus: 'series',
-          label: {
-            show: true,
-            formatter: function (param: any) {
-              return param.data[0] + "\n" + param.data[1]; // 显示车型名称
-            },
-            position: 'top'
-          }
-        },
-        itemStyle: {
-          shadowBlur: 10,
-          shadowColor: 'rgba(120, 36, 50, 0.5)',
-          shadowOffsetY: 5,
-          color: new echarts.graphic.RadialGradient(0.4, 0.3, 1, [
-            { offset: 0, color: 'rgb(251, 118, 123)' },
-            { offset: 1, color: 'rgb(204, 46, 72)' }
-          ])
-        }
-      }
-    ]
-  };
 
-  // 设置图表的配置项和数据
-  myChart_bubble_chart.setOption(option);
-}
 </script>
 
 <style scoped>
@@ -220,12 +292,57 @@ function updateChart() {
   /* 设置固定高度或相对高度 */
 }
 
-
 .chart-container {
   width: 100%;
   /* 占父容器宽度 */
   height: 100%;
   /* 占父容器高度 */
   position: relative;
+}
+
+
+/* 工况区域的样式 */
+.working-conditions {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+
+}
+
+.flex-container {
+  display: flex;
+  justify-content: space-between;
+  width: 100%;
+  align-items: flex-start;
+  /* 确保左右盒子顶部对齐 */
+}
+
+.left-column {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-start;
+  margin-right: 10px;
+}
+
+.right-column {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-start;
+}
+
+/* 工况的网格布局，设置每行3个复选框 */
+.el-checkbox-group {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  /* 一行三个复选框 */
+  /* gap: 10px;  */
+}
+
+/* 提交按钮区域 */
+.form-actions {
+  display: flex;
+  justify-content: flex-start;
 }
 </style>

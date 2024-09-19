@@ -3,7 +3,7 @@ import { defineStore } from 'pinia'
 import axios from "axios";
 
 interface CarBaseInfo {
-    id: string;
+    id: number;
     name: string;
     wheelbase: string,
     release_date: Date,
