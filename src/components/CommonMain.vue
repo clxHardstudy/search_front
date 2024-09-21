@@ -1,71 +1,82 @@
 <template>
-  <el-main class="aside-menu">
-    <div id="main" class="main-scrollable" style="width: 600px; height: 800px">
-      <!-- ECharts 图表容器 -->
-    </div>
-    <div id="main1" class="main-scrollable" style="width: 600px; height: 400px">
-      <!-- ECharts 图表容器 -->
-    </div>
-  </el-main>
+  <div>
+    <el-table
+      :data="tableData"
+      :span-method="objectSpanMethod"
+      border
+      style="width: 100%; margin-top: 20px"
+    >
+      <el-table-column prop="workingConditions" label="工况" width="180" />
+      <el-table-column prop="workingConditionsDetail" label="工况详细" />
+      <el-table-column prop="amount1" label="Amount 1" />
+      
+    </el-table>
+  </div>
 </template>
-  
 
-<script setup name="App" lang="ts">
-import { onMounted, reactive } from "vue";
-import * as echarts from "echarts";
+<script lang="ts" setup>
+import type { TableColumnCtx } from 'element-plus'
 
-var carTypeInfoList = reactive([]);
-
-// 获取所有的cartype数据
-onMounted(async () => {
-  // try {
-  //   // 使用 await 等待 Promise 解析
-  //   carTypeInfoList = await getAllCarType();
-  //   // console.log(carTypeInfoList); // 打印出数组数据
-  // } catch (error) {
-  //   console.error("Error fetching car types:", error); // 如果有错误，打印错误
-  // }
-
-  //   ts语法
-  const namesArray = carTypeInfoList.map((car) => car.name);
-  const wheelBaseArray = carTypeInfoList.map((car) => car.wheelbase);
-  // console.log(namesArray);
-
-  const chartDom = document.getElementById("main");
-  const chartDom1 = document.getElementById("main1");
-
-  // prettier-ignore
-  if (chartDom) {
-    const myChart = echarts.init(chartDom);
-    const myChart1 = echarts.init(chartDom1);
-
-    const option = {
-      xAxis: {
-        type: 'category',
-        data: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
-      },
-      yAxis: {
-        type: 'value'
-      },
-      series: [
-        {
-          data: [150, 230, 224, 218, 135, 147, 260],
-          type: 'line'
-        }
-      ]
-    };
-    // 设置图表的配置项和数据
-    myChart.setOption(option);
-    myChart1.setOption(option);
-  }
-});
-</script>
-  
-  
-<style scoped>
-.aside-menu {
-  height: 100vh;
-  width: 100%;
-  overflow-y: auto; /* 允许垂直滚动 */
+interface WorkCondition {
+  workingConditions: string
+  workingConditionsDetail: string
+  amount1: number
 }
-</style>
+
+interface SpanMethodProps {
+  row: WorkCondition
+  column: TableColumnCtx<WorkCondition>
+  rowIndex: number
+  columnIndex: number
+}
+
+const objectSpanMethod = ({
+  row,
+  column,
+  rowIndex,
+  columnIndex,
+}: SpanMethodProps) => {
+  if (columnIndex === 0) {
+    if (rowIndex % 2 === 0) {
+      return {
+        rowspan: 2,
+        colspan: 1,
+      }
+    } else {
+      return {
+        rowspan: 0,
+        colspan: 0,
+      }
+    }
+  }
+}
+
+const tableData: WorkCondition[] = [
+  {
+    workingConditions: '工况1',
+    workingConditionsDetail: '工况详细1',
+    amount1: 234,
+  },
+  {
+    workingConditions: '工况2',
+    workingConditionsDetail: '工况详细2',
+    amount1: 234,
+  },
+  {
+    workingConditions: '工况3',
+    workingConditionsDetail: '工况详细3',
+    amount1: 234,
+  },
+  {
+    workingConditions: '工况4',
+    workingConditionsDetail: '工况详细4',
+    amount1: 234,
+  },
+  {
+    workingConditions: '工况5',
+    workingConditionsDetail: '工况详细5',
+    amount1: 234,
+  },
+  
+]
+</script>

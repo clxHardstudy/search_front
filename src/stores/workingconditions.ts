@@ -28,6 +28,7 @@ export const useWorkingConditionsStore = defineStore('workingconditions', () => 
 
     async function getWorkingConditionDetail(item: { "car_id_list": number[], "coordinate_system": string, "working_conditions_list": number[] }) {
         try {
+            console.log(item)
             let result = await axios.post(
                 "http://127.0.0.1:8000/working_conditions/detail",
                 item
