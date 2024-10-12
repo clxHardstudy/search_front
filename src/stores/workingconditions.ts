@@ -19,7 +19,6 @@ export const useWorkingConditionsStore = defineStore('workingconditions', () => 
             let result = await axios.get(
                 "http://127.0.0.1:8000/working_conditions"
             );
-            // console.log(result.data)
             return result.data
         } catch (error) {
             alert(error)
@@ -28,12 +27,22 @@ export const useWorkingConditionsStore = defineStore('workingconditions', () => 
 
     async function getWorkingConditionDetail(item: { "car_id_list": number[], "coordinate_system": string, "working_conditions_list": number[] }) {
         try {
-            console.log(item)
             let result = await axios.post(
                 "http://127.0.0.1:8000/working_conditions/detail",
                 item
             );
-            // console.log(result.data)
+            return result.data
+        } catch (error) {
+            alert(error)
+        }
+    }
+
+    async function getWorkingConditionDetailOnce(item: { "car_base_info_id": number }) {
+        try {
+            let result = await axios.post(
+                "http://127.0.0.1:8000/working_conditions/detail_once",
+                item
+            );
             return result.data
         } catch (error) {
             alert(error)
@@ -53,5 +62,8 @@ export const useWorkingConditionsStore = defineStore('workingconditions', () => 
         }
     }
 
-    return { workingConditionsList, getWorkingConditions, getWorkingConditionDetail, getWorkingConditionDetailTitle }
+    return {
+        workingConditionsList,
+        getWorkingConditions, getWorkingConditionDetail, getWorkingConditionDetailOnce, getWorkingConditionDetailTitle
+    }
 })

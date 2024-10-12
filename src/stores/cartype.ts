@@ -17,7 +17,7 @@ export const useCarTypeStore = defineStore('cartype', () => {
             let result = await axios.get(
                 "http://127.0.0.1:8000/car_type"
             );
-            console.log(result.data)
+            // console.log(result.data)
             return result.data
         } catch (error) {
             alert(error)

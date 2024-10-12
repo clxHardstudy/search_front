@@ -6,10 +6,13 @@ interface CarBaseInfo {
     id: number;
     name: string;
     wheelbase: string,
+    front_track: string,
+    rear_track: string,
     release_date: Date,
     create_time: number,
     update_time: number,
-    car_type_id: number
+    car_type_id: number,
+    platform_id: number,
 }
 
 
@@ -20,7 +23,7 @@ export const useCarBaseInfoStore = defineStore('carbaseinfo', () => {
 
     // 车型选择时的 选择车型的id 响应式更新
     const selectedCarTypeId_ts = ref<string | null>(null);  // 添加 selectedCarTypeId
-
+    const selectedPlatformList_ts = ref<Array<number>>([]); // 定义为数字数组类型
 
     // 获取 cartype 表中所有汽车数据
     async function getAllCarBaseInfo() {
@@ -47,7 +50,20 @@ export const useCarBaseInfoStore = defineStore('carbaseinfo', () => {
         }
     }
 
-    async function searchCarOrSUV(item: { car_type_id: number, name: string }) {
+    async function getCarByCarTypeAndPlatform(item: { car_type_id: number, platform_id_list: Array<number> }) {
+        try {
+            let result = await axios.post(
+                "http://127.0.0.1:8000/car_base_info/car_type_and_platform",
+                item,
+            );
+            console.log("请求接口：", "的所有汽车数据");
+            return result.data
+        } catch (error) {
+            alert(error)
+        }
+    }
+
+    async function searchCarByName(item: { car_type_id: number, platform_id_list: Array<number>, name: string }) {
         try {
             let result = await axios.post(
                 "http://127.0.0.1:8000/car_base_info/name",
@@ -60,7 +76,7 @@ export const useCarBaseInfoStore = defineStore('carbaseinfo', () => {
         }
     }
 
-    async function searchCarByWheelbase(item: { car_type_id: number, wheelbase: string }) {
+    async function searchCarByWheelbase(item: { car_type_id: number, platform_id_list: Array<number>, wheelbase: string }) {
         try {
             let result = await axios.post(
                 "http://127.0.0.1:8000/car_base_info/wheelbase",
@@ -73,7 +89,7 @@ export const useCarBaseInfoStore = defineStore('carbaseinfo', () => {
         }
     }
 
-    async function searchCarByNameAndWheelbase(item: { car_type_id: number, wheelbase: string, name: string }) {
+    async function searchCarByNameAndWheelbase(item: { car_type_id: number, platform_id_list: Array<number>, wheelbase: string, name: string }) {
         try {
             let result = await axios.post(
                 "http://127.0.0.1:8000/car_base_info/name_and_wheelbase",
@@ -85,5 +101,29 @@ export const useCarBaseInfoStore = defineStore('carbaseinfo', () => {
             alert(error)
         }
     }
-    return { carBaseInfoList, selectedCarTypeId_ts, getAllCarBaseInfo, getCarOrSUV, searchCarOrSUV, searchCarByWheelbase, searchCarByNameAndWheelbase }
+
+    async function searchCarByMultipleConditionQuery(item: {
+        car_type_id: number,
+        platform_id_list: Array<number>,
+        wheelbase: string,
+        name: string,
+        front_track: string,
+        rear_track: string,
+    }) {
+        try {
+            let result = await axios.post(
+                "http://127.0.0.1:8000/car_base_info/multiple_condition_query",
+                item,
+            );
+            console.log("请求接口：根据多条件查询所有的汽车数据");
+            return result.data
+        } catch (error) {
+            alert(error)
+        }
+    }
+    return {
+        carBaseInfoList, selectedCarTypeId_ts, selectedPlatformList_ts,
+        getAllCarBaseInfo, getCarOrSUV, searchCarByName, getCarByCarTypeAndPlatform,
+        searchCarByWheelbase, searchCarByNameAndWheelbase, searchCarByMultipleConditionQuery
+    }
 })

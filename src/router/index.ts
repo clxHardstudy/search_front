@@ -1,6 +1,6 @@
 // 第一步：引入createRouter
 import Main from "@/views/Main.vue";
-import PlatForm from "@/views/PlatForm.vue";
+import PlatForm from "@/views/Info.vue";
 import CarType from "@/views/CarType.vue";
 
 import { createRouter,createWebHistory } from "vue-router";
@@ -16,7 +16,7 @@ const router = createRouter({
             component:Main,
         },
         {
-            path:'/platform',
+            path:'/info',
             component:PlatForm
         },
         {

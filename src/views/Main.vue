@@ -10,7 +10,7 @@
         </el-header>
 
         <el-main class="right-main">
-          <common-main />
+          <common-home />
         </el-main>
       </el-container>
     </el-container>
@@ -20,8 +20,7 @@
 <script setup lang="ts">
 import CommonAside from "../components/CommonAside.vue";
 import CommonHeader from "../components/CommonHeader.vue";
-import CommonMain from "../components/CommonMain.vue";
-import { RouterView, RouterLink } from "vue-router";
+import CommonHome from "../components/CommonHome.vue";
 </script>
 
 <style>
