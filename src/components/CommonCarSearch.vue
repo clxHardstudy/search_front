@@ -43,17 +43,29 @@
 
         <el-divider />
 
-        <div class="form-container">
-            <el-form :model="form" label-width="auto" style="max-width: 33%;">
-                <el-form-item label="Activity name">
-                    <el-input v-model="form.name" />
-                </el-form-item>
-                <el-form-item>
-                    <el-button type="primary" @click="onSubmitEdit">Create</el-button>
-                    <el-button>Cancel</el-button>
-                </el-form-item>
-            </el-form>
+        <div class="form-container" v-if="finalResult.title.length > 0">
+            <el-select class="modulesSelect" v-model="value" clearable placeholder="请选择模块" style="width: 33%">
+                <el-option v-for="item in options" :key="item.value" :label="item.label" :value="item.value" />
+            </el-select>
+            <!-- 外层容器，控制整个 flex 布局 -->
+            <div class="form-row">
+                <div v-for="(titleItem, index) in finalResult.title" :key="index" class="form-column">
+                    <h3>{{ titleItem.workingCondition.name }}</h3>
+                    <el-form :model="finalResult.data" label-width="auto">
+                        <el-form-item v-for="(detail, detailIndex) in titleItem.workingConditionsDetails"
+                            :key="detailIndex" :label="detail.name">
+                            <el-input
+                                v-model="finalResult.data[value][titleItem.workingCondition.name_en][detail.name_en]" />
+                        </el-form-item>
+                    </el-form>
+                </div>
+            </div>
+
+            <el-form-item class="btn">
+                <el-button type="primary" @click="onSubmitEdit">提交</el-button>
+            </el-form-item>
         </div>
+
     </div>
 </template>
 
@@ -61,19 +73,24 @@
 import { computed, reactive, onMounted, watch, ref, nextTick } from "vue";
 import { useCarBaseInfoStore } from "../stores/carbaseinfo";
 import { useWorkingConditionsStore } from "../stores/workingconditions";
+import { useCarSearchStore } from "@/stores/carsearch";
 import { storeToRefs } from "pinia";
 import { da, de } from "element-plus/es/locales.mjs";
+import { SCOPE } from "element-plus";
 
 // 从 carBaseInfoStore 中获取汽车基本信息相关的函数和状态
 const carBaseInfoStore = useCarBaseInfoStore();
-const { carBaseInfoList, searchCarByMultipleConditionQuery } = carBaseInfoStore;
-
+const { carBaseInfoSelectIdList } = storeToRefs(carBaseInfoStore)
+const { carBaseInfoList, searchCarByMultipleConditionQuery, searchNewCarByMultipleConditionQuery } = carBaseInfoStore;
 
 // 从 workingConditionsStore 中获取工况相关的状态
 const workingConditionsStore = useWorkingConditionsStore();
 const { workingConditionsList } = storeToRefs(workingConditionsStore); // 工况列表
 const { getWorkingConditionDetailOnce, getWorkingConditionDetailTitle } = workingConditionsStore
 const { selectedCarTypeId_ts, selectedPlatformList_ts } = storeToRefs(carBaseInfoStore); // 选中的车型类型 ID
+
+const carSearchStore = useCarSearchStore()
+const { updateWorkingConditions } = carSearchStore
 
 // 定义表单相关的状态
 const formInline = reactive({
@@ -86,26 +103,33 @@ const formInline = reactive({
 // 加载状态
 const isLoading = ref(false); // 查询按钮的加载状态
 
-// 转换后的汽车基本信息列表，计算汽车类型名称
+// 转换后的汽车基本信息列表，计算汽车类型名称和平台名称
 const transformedCarBaseInfoList = computed(() => {
+    const platformMap: { [key: number]: string } = {
+        1: "T1X",
+        2: "T2X",
+        3: "E0X",
+        4: "M1X",
+        5: "Benchmark",
+    };
     return carBaseInfoList.map((item) => ({
         ...item,
-        car_type_name: item.car_type_id === 1 ? "轿车" : item.car_type_id === 2 ? "SUV" : "其他",
-        platform_name: item.platform_id === 1 ? "T1X" : item.platform_id === 2 ? "T2X" : "未知",
+        car_type_name: item.car_type_id === 1 ? "轿车" : item.car_type_id === 2 ? "SUV" : item.car_type_id === 3 ? "MPV" : "其他",
+        platform_name: platformMap[item.platform_id as keyof typeof platformMap] || "未知", // 显式转换 platform_id 的类型
     }));
 });
-
 // 车型查询按钮点击事件
 const onSubmit = async () => {
     try {
         isLoading.value = true; // 设置加载状态
-        const data = await searchCarByMultipleConditionQuery({
+        const data = await searchNewCarByMultipleConditionQuery({
             car_type_id: Number(selectedCarTypeId_ts.value),
             platform_id_list: selectedPlatformList_ts.value,
             name: formInline.name,
             wheelbase: formInline.wheelbase,
             front_track: formInline.front_track,
             rear_track: formInline.rear_track,
+            car_base_info_id_list: carBaseInfoSelectIdList.value
         });
         carBaseInfoStore.carBaseInfoList.splice(0, carBaseInfoStore.carBaseInfoList.length, ...data); // 更新表格数据
     } finally {
@@ -114,15 +138,19 @@ const onSubmit = async () => {
 };
 
 const workingConditionsData = ref<any>({ front: {}, rear: {} });
+const car_base_info_id = ref("")
 
 // 编辑按钮点击事件
 const handleEdit = async (row: any) => {
     try {
         // 确保 fetchData 完成后再执行后续操作
         await fetchData(row);
+        car_base_info_id.value = row.id
         console.log("workingConditionsData: ", workingConditionsData.value);
+
         // 调用函数，获取数据，确保数据获取后再处理 finalResult
         await fetchWorkingConditionsData();
+        // 初始化 formData，将 finalResult.data.front 的内容赋值给 formData
         console.log("finalResult: ", finalResult);
     } catch (error) {
         console.error("编辑过程中出现错误", error);
@@ -141,18 +169,30 @@ const fetchData = async (row: any) => {
 
 // 组件挂载时，初始化数据
 onMounted(async () => {
-    const data = await workingConditionsStore.getWorkingConditions(); // 获取工况列表数据
-    console.log(data)
-    workingConditionsList.value = data.sort((x: any, y: any) => x.id - y.id); // 根据工况 ID 对工况列表排序
-    await nextTick(); // 等待 DOM 更新
-
-
+  const data = await workingConditionsStore.getWorkingConditions(); // 获取工况列表数据
+  console.log(data);
+  workingConditionsList.value = data.sort((x: any, y: any) => x.id - y.id); // 根据工况 ID 对工况列表排序
+  await nextTick(); // 等待 DOM 更新
+  carBaseInfoSelectIdList.value.length = 0; // 清空数组
 });
+
+
+// 定义 value 为 'front' | 'rear'
+const value = ref<'front' | 'rear'>('front'); const options = [
+    {
+        value: 'front',
+        label: '前模块',
+    },
+    {
+        value: 'rear',
+        label: '后模块',
+    },
+];
 
 
 // 定义接口类型，表示每个 detailList 项的结构
 interface DetailItem {
-    id:number;
+    id: number;
     name: string;
     name_en: string;
 }
@@ -175,55 +215,98 @@ interface WorkingConditionData {
 }
 
 // 定义 `finalResult` 的类型
-const finalResult: {
-    name: ConditionDetails[];  // 存储工况的 name
-    name_en: ConditionDetailsEn[];  // 存储工况的 name_en
-    data: WorkingConditionData;  // 存储工况详细信息，front 和 rear 数据
-    title: {  // 新增 title 属性
-        table: { id: number, name: string; name_en: string };  // 每个工况的名称和英文名称
-        workingConditionsDetails: { id: number, name: string; name_en: string }[];  // 工况的详细信息
-    }[]
-} = {
-    name: [],
-    name_en: [],
+const finalResult = reactive({
+    name: [] as ConditionDetails[],  // 存储工况的 name
+    name_en: [] as ConditionDetailsEn[],  // 存储工况的 name_en
     data: {
-        front: {}, // front 的数据是以 name_en 作为键的对象
-        rear: {}   // rear 的数据也是以 name_en 作为键的对象
+        front: {} as Record<string, any>,  // front 的数据是以 name_en 作为键的对象
+        rear: {} as Record<string, any>    // rear 的数据也是以 name_en 作为键的对象
     },
-    title: []  // 初始化 title 为一个空数组
-};
+    title: [] as {
+        workingCondition: { id: number, name: string, name_en: string };  // 每个工况的名称和英文名称
+        workingConditionsDetails: { id: number, name: string, name_en: string }[];  // 工况的详细信息
+    }[]
+});
 
+// // 遍历workingConditionsList，逐个获取每个工况详细信息
+// const fetchWorkingConditionsData = async () => {
+//     finalResult.title = [];
+//     for (const condition of workingConditionsList.value) {
+//         const id = condition.id;
+//         try {
+//             // 通过ID请求接口获取详细数据
+//             const response = await workingConditionsStore.getWorkingConditionDetailTitle({ working_conditions_list: [id] });
+//             // 获取接口返回的数组数据，类型为 DetailItem[]
+//             const detailList: DetailItem[] = response[id];
+
+//             finalResult.title.push({
+//                 workingCondition: {
+//                     id: condition.id,
+//                     name: condition.name,
+//                     name_en: condition.name_en
+//                 },
+//                 workingConditionsDetails: detailList.map((detail) => ({
+//                     id: detail.id,
+//                     name: detail.name,
+//                     name_en: detail.name_en
+//                 }))
+//             });
+//             // 使用 name_en 作为键
+//             const dataKey = condition.name_en;
+//             // 处理 finalResult.data 部分，将 front 和 rear 拉到最外层
+//             const firstLevelKeys = ['front', 'rear'];
+//             firstLevelKeys.forEach((levelKey) => {
+//                 // 初始化最外层的 front 或 rear 对象
+//                 if (!finalResult.data[levelKey as 'front' | 'rear']) {
+//                     finalResult.data[levelKey as 'front' | 'rear'] = {};
+//                 }
+//                 // 如果该条件的 detail 存在于 workingConditionsData 中
+//                 if (workingConditionsData.value[levelKey] && workingConditionsData.value[levelKey][dataKey]) {
+//                     // 遍历每个工况详情，将其数据存储在相应的 front 或 rear 下
+//                     finalResult.data[levelKey as 'front' | 'rear'][dataKey] = {};
+//                     detailList.forEach((detail) => {
+//                         const detailKey = detail.name_en;  // detail.name_en 对应的是具体的字段名称
+
+//                         if (workingConditionsData.value[levelKey][dataKey][0][detailKey]) {
+//                             finalResult.data[levelKey as 'front' | 'rear'][dataKey][detailKey] = workingConditionsData.value[levelKey][dataKey][0][detailKey];
+//                         } else {
+//                             console.warn(`在 data 中找不到键 ${detailKey}`);
+//                         }
+//                     });
+//                 } else {
+//                     console.warn(`在 data 中找不到一级键 ${levelKey} 或二级键 ${dataKey}`);
+//                 }
+//             });
+//             // 提前初始化 formData 中的工况数据
+//             if (!formData[condition.name_en]) {
+//                 formData[condition.name_en] = {};
+//             }
+//             detailList.forEach(detail => {
+//                 if (!formData[condition.name_en][detail.name_en]) {
+//                     formData[condition.name_en][detail.name_en] = ""; // 初始化为默认值
+//                 }
+//             });
+//             console.log("提前初始化formData：",formData)
+//         } catch (error) {
+//             console.error(`获取ID为${id}的工况详细信息失败`, error);
+//         }
+//     }
+// };
 // 遍历workingConditionsList，逐个获取每个工况详细信息
 const fetchWorkingConditionsData = async () => {
-    // 初始化 finalResult.data，确保最外层的 front 和 rear 是对象
-    finalResult.data = {
-        front: {},
-        rear: {}
-    };
-
-    // 初始化 finalResult.title 为一个数组
+    // 清空 finalResult.title 防止数据重复
     finalResult.title = [];
-
+    // 遍历工况列表
     for (const condition of workingConditionsList.value) {
         const id = condition.id;
+        const dataKey = condition.name_en; // 工况的英文名作为键
         try {
-            // 通过ID请求接口获取详细数据
+            // 请求接口获取详细数据
             const response = await workingConditionsStore.getWorkingConditionDetailTitle({ working_conditions_list: [id] });
-            // 获取接口返回的数组数据，类型为 DetailItem[]
-            const detailList: DetailItem[] = response[id];
-
-            // 将返回的数据中的 'name' 和 'name_en' 提取并放入最终结果对象中
-            // finalResult.name.push({
-            //     name: condition.name,
-            //     details: detailList.map((item: DetailItem) => item.name) // 显式指定 item 的类型
-            // });
-            // finalResult.name_en.push({
-            //     name_en: condition.name_en,
-            //     details: detailList.map((item: DetailItem) => item.name_en) // 显式指定 item 的类型
-            // });
-            // 添加到title数组，包含table和workingConditionsDetails
+            const detailList: DetailItem[] = response[id]; // 接口返回的工况详细信息
+            // 构建 finalResult.title
             finalResult.title.push({
-                table: {
+                workingCondition: {
                     id: condition.id,
                     name: condition.name,
                     name_en: condition.name_en
@@ -234,31 +317,20 @@ const fetchWorkingConditionsData = async () => {
                     name_en: detail.name_en
                 }))
             });
-            // 使用 name_en 作为键
-            const dataKey = condition.name_en;
-            // 处理 finalResult.data 部分，将 front 和 rear 拉到最外层
-            const firstLevelKeys = ['front', 'rear'];
-            firstLevelKeys.forEach((levelKey) => {
-                // 初始化最外层的 front 或 rear 对象
+            // 初始化 front 和 rear 两个部分的数据
+            ['front', 'rear'].forEach((levelKey) => {
+                // 如果外层 front 或 rear 对象不存在，初始化
                 if (!finalResult.data[levelKey as 'front' | 'rear']) {
                     finalResult.data[levelKey as 'front' | 'rear'] = {};
                 }
-                // 如果该条件的 detail 存在于 workingConditionsData 中
-                if (workingConditionsData.value[levelKey] && workingConditionsData.value[levelKey][dataKey]) {
-                    // 遍历每个工况详情，将其数据存储在相应的 front 或 rear 下
-                    finalResult.data[levelKey as 'front' | 'rear'][dataKey] = {};
-                    detailList.forEach((detail) => {
-                        const detailKey = detail.name_en;  // detail.name_en 对应的是具体的字段名称
+                // 如果 detail 存在于 workingConditionsData 中，初始化相应的键值
+                const conditionData = workingConditionsData.value[levelKey]?.[dataKey]?.[0] || {};
+                finalResult.data[levelKey as 'front' | 'rear'][dataKey] = {};
 
-                        if (workingConditionsData.value[levelKey][dataKey][0][detailKey]) {
-                            finalResult.data[levelKey as 'front' | 'rear'][dataKey][detailKey] = workingConditionsData.value[levelKey][dataKey][0][detailKey];
-                        } else {
-                            console.warn(`在 data 中找不到键 ${detailKey}`);
-                        }
-                    });
-                } else {
-                    console.warn(`在 data 中找不到一级键 ${levelKey} 或二级键 ${dataKey}`);
-                }
+                detailList.forEach((detail) => {
+                    const detailKey = detail.name_en;
+                    finalResult.data[levelKey as 'front' | 'rear'][dataKey][detailKey] = conditionData[detailKey] || "";
+                });
             });
         } catch (error) {
             console.error(`获取ID为${id}的工况详细信息失败`, error);
@@ -267,24 +339,17 @@ const fetchWorkingConditionsData = async () => {
 };
 
 
-
-
-// do not use same name with ref
-const form = reactive({
-    name: '',
-    region: '',
-    date1: '',
-    date2: '',
-    delivery: false,
-    type: [],
-    resource: '',
-    desc: '',
-})
 const onSubmitEdit = () => {
-    console.log('submit!')
-}
-</script>
+    const coordinate_system = value.value === 'front' ? 0 : 1; // 根据选中的模块确定 coordinate_system 的值
+    // console.log(finalResult.data[value.value]);
+    updateWorkingConditions({
+        car_base_info_id: Number(car_base_info_id.value),
+        coordinate_system: coordinate_system, // 动态设置 coordinate_system
+        data: finalResult.data[value.value]
+    });
+};
 
+</script>
 
 
 <style scoped>
@@ -307,7 +372,7 @@ const onSubmitEdit = () => {
 
 .form-container {
     padding: 16px;
-    /* min-height: 1000px; */
+    min-height: 1500px;
 }
 
 .edit-form {
@@ -315,5 +380,68 @@ const onSubmitEdit = () => {
     padding: 16px;
     border-radius: 8px;
     box-shadow: 0 2px 12px rgba(0, 0, 0, 0.1);
+}
+
+.form-container {
+    padding: 16px;
+}
+
+/* 控制每三个元素换一行 */
+.form-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 16px;
+    /* 设置元素之间的间距 */
+}
+
+.form-column {
+    flex: 1 1 calc(33.33% - 16px);
+    /* 每列占 33.33% 的宽度，减去间距 */
+    max-width: calc(33.33% - 16px);
+    /* 设置最大宽度 */
+    box-sizing: border-box;
+    /* 包括内边距和边框在内 */
+    height: 300px;
+    /* 设置固定高度 */
+    overflow-y: auto;
+    /* 溢出时显示滚动条 */
+    background-color: #f9f9f9;
+    /* 可选：设置背景色以区分盒子 */
+    border: 1px solid #ddd;
+    /* 可选：设置边框以区分盒子 */
+    border-radius: 4px;
+    /* 可选：设置圆角 */
+    padding: 16px;
+    /* 可选：设置内边距 */
+}
+
+@media (max-width: 768px) {
+
+    /* 针对小屏幕做自适应布局，每行显示两个元素 */
+    .form-column {
+        flex: 1 1 calc(50% - 16px);
+        /* 每列占 50% 的宽度 */
+        max-width: calc(50% - 16px);
+        /* 设置最大宽度 */
+    }
+}
+
+@media (max-width: 480px) {
+
+    /* 针对更小的屏幕，每行显示一个元素 */
+    .form-column {
+        flex: 1 1 100%;
+        /* 每列占 100% 的宽度 */
+        max-width: 100%;
+        /* 设置最大宽度 */
+    }
+}
+
+.btn {
+    margin-top: 20px;
+}
+
+.modulesSelect {
+    margin-bottom: 20px;
 }
 </style>

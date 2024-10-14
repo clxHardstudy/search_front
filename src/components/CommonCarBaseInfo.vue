@@ -110,7 +110,8 @@ import { useUtilsStore } from "@/stores/utils";
 
 // 从 carBaseInfoStore 中获取汽车基本信息相关的函数和状态
 const carBaseInfoStore = useCarBaseInfoStore();
-const { carBaseInfoList, getCarByCarTypeAndPlatform, searchCarByName, searchCarByWheelbase, searchCarByNameAndWheelbase, searchCarByMultipleConditionQuery } = carBaseInfoStore;
+const { carBaseInfoSelectIdList } = storeToRefs(carBaseInfoStore)
+const { carBaseInfoList, searchNewCarByMultipleConditionQuery, searchCarByMultipleConditionQuery } = carBaseInfoStore;
 
 // 从 workingConditionsStore 中获取工况相关的状态
 const workingConditionsStore = useWorkingConditionsStore();
@@ -174,11 +175,10 @@ const transformedCarBaseInfoList = computed(() => {
 
   return carBaseInfoList.map((item) => ({
     ...item,
-    car_type_name: item.car_type_id === 1 ? "轿车" : item.car_type_id === 2 ? "SUV" : "其他",
+    car_type_name: item.car_type_id === 1 ? "轿车" : item.car_type_id === 2 ? "SUV" : item.car_type_id === 3 ? "MPV" : "其他",
     platform_name: platformMap[item.platform_id as keyof typeof platformMap] || "未知", // 显式转换 platform_id 的类型
   }));
 });
-
 
 
 // 获取选中的汽车 ID 列表
@@ -223,13 +223,14 @@ watch(
 const onSubmit = async () => {
   try {
     isLoading.value = true; // 设置加载状态
-    const data = await searchCarByMultipleConditionQuery({
+    const data = await searchNewCarByMultipleConditionQuery({
       car_type_id: Number(selectedCarTypeId_ts.value),
       platform_id_list: selectedPlatformList_ts.value,
       name: formInline.name,
       wheelbase: formInline.wheelbase,
       front_track: formInline.front_track,
       rear_track: formInline.rear_track,
+      car_base_info_id_list: carBaseInfoSelectIdList.value
     })
     carBaseInfoStore.carBaseInfoList.splice(0, carBaseInfoStore.carBaseInfoList.length, ...data); // 更新表格数据
   } finally {
@@ -337,6 +338,7 @@ onMounted(async () => {
   if (leftColumnEl) {
     leftColumnHeight.value = leftColumnEl.scrollHeight; // 设置左侧工况选择区域的高度，用于限制右侧滚动区域的高度
   }
+  carBaseInfoSelectIdList.value = [];
 });
 
 

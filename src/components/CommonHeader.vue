@@ -26,15 +26,24 @@
     </el-menu-item>
 
     <el-menu-item index="4">
-      <el-select-v2 v-model="platformValue" :options="options" multiple clearable collapse-tags placeholder="请选择平台"
-        popper-class="custom-header" :max-collapse-tags="1" style="width: 240px">
+      <el-select-v2 v-model="platformValue" :options="platformOptions" multiple clearable collapse-tags
+        placeholder="请选择平台" popper-class="custom-header" :max-collapse-tags="1" style="width: 240px">
         <template #header>
-          <el-checkbox v-model="checkAll" :indeterminate="indeterminate" @change="handleCheckAll">
+          <el-checkbox v-model="platformCheckAll" :indeterminate="platformIndeterminate"
+            @change="platformHandleCheckAll">
             全选
           </el-checkbox>
         </template>
       </el-select-v2>
     </el-menu-item>
+
+    <el-menu-item index="5">
+      <el-select-v2 v-model="carShowValue" :options="carShowOptions" filterable multiple clearable collapse-tags
+        placeholder="请选择车辆" popper-class="custom-header" :max-collapse-tags="1" style="width: 240px">
+      </el-select-v2>
+    </el-menu-item>
+
+
   </el-menu>
 </template>
 
@@ -61,16 +70,21 @@ const selectedCarType = ref<{ id: string | null; name: string | null }>({
   name: null,
 });
 
-const options = ref<{ value: string; label: string }[]>([]);
+const platformOptions = ref<{ value: string; label: string }[]>([]);
+const carShowOptions = ref<{ value: string; label: string }[]>([]);
 
 
 // 引入 Pinia Store
 const carBaseInfoStore = useCarBaseInfoStore();
 const carTypeStore = useCarTypeStore();
 const platformStore = usePlatformStore();
+
 const { carTypeList, getCarType } = carTypeStore;
+
 const { platformList, getPlatform } = platformStore;
-const { selectedCarTypeId_ts, selectedPlatformList_ts, getCarOrSUV, getAllCarBaseInfo, getCarByCarTypeAndPlatform } = carBaseInfoStore;
+
+const { carBaseInfoSelectIdList } = storeToRefs(carBaseInfoStore)
+const { getAllCarBaseInfo, getCarBaseInfoList, getCarByCarTypeAndPlatform } = carBaseInfoStore;
 
 // 计算属性，用于动态确定标题
 const carTypeMenuTitle = computed(() => props.carTypeList?.length ? "车型选择" : "选择");
@@ -106,11 +120,12 @@ onMounted(async () => {
 
   await fetchData();
   // 平台
-  options.value = platformStore.platformList.map(platform => ({
+  platformOptions.value = platformStore.platformList.map(platform => ({
     value: platform.id,
     label: platform.name
   }));
 });
+
 
 // 数据请求函数
 async function fetchData() {
@@ -121,7 +136,13 @@ async function fetchData() {
         car_type_id: Number(selectedCarType.value.id),
         platform_id_list: platformValue.value.map(id => Number(id))
       });
-      if (Array.isArray(data)) carBaseInfoStore.carBaseInfoList.push(...data);
+      if (Array.isArray(data)) {
+        carBaseInfoStore.carBaseInfoList.push(...data);
+        carShowOptions.value = carBaseInfoStore.carBaseInfoList.map(car_base_info => ({
+          value: String(car_base_info.id),  // 将 id 转换为字符串
+          label: car_base_info.name
+        }));
+      }
     } else {
       carBaseInfoStore.carBaseInfoList.length = 0;
       const data = await getAllCarBaseInfo();
@@ -133,29 +154,38 @@ async function fetchData() {
 }
 
 
-const checkAll = ref(false)
-const indeterminate = ref(false)
+const platformCheckAll = ref(false)
+const platformIndeterminate = ref(false)
 const platformValue = ref<CheckboxValueType[]>([])
+const carShowValue = ref<CheckboxValueType[]>([])
 
 watch(platformValue, (val) => {
   if (val.length === 0) {
-    checkAll.value = false
-    indeterminate.value = false
-  } else if (val.length === options.value.length) {
-    checkAll.value = true
-    indeterminate.value = false
+    platformCheckAll.value = false
+    platformIndeterminate.value = false
+  } else if (val.length === platformOptions.value.length) {
+    platformCheckAll.value = true
+    platformIndeterminate.value = false
   } else {
-    indeterminate.value = true
+    platformIndeterminate.value = true
   }
   carBaseInfoStore.selectedPlatformList_ts = platformValue.value.map(id => Number(id));
   // 监听到选择的平台发生变化，重新获取数据
   fetchData();
 })
 
-const handleCheckAll = (val: CheckboxValueType) => {
-  indeterminate.value = false
+watch(carShowValue, (val) => {
+  if (val.length !== 0) {
+    const numberVal = val.map(v => Number(v));
+    carBaseInfoSelectIdList.value = numberVal
+  }
+});
+
+
+const platformHandleCheckAll = (val: CheckboxValueType) => {
+  platformIndeterminate.value = false
   if (val) {
-    platformValue.value = options.value.map((_) => _.value)
+    platformValue.value = platformOptions.value.map((_) => _.value)
   } else {
     platformValue.value = []
   }
@@ -164,7 +194,7 @@ const handleCheckAll = (val: CheckboxValueType) => {
 // 使用 watchEffect 动态监听 platformList 的变化并更新 options
 watchEffect(() => {
   if (platformStore.platformList.length > 0) {
-    options.value = platformStore.platformList.map(platform => ({
+    platformOptions.value = platformStore.platformList.map(platform => ({
       value: platform.id,
       label: platform.name
     }));

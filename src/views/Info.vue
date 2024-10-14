@@ -26,13 +26,16 @@ import CommonCarSearch from "@/components/CommonCarSearch.vue";
 
 import { useCarTypeStore } from "@/stores/cartype";
 import { usePlatformStore } from "@/stores/platform";
+import { useCarBaseInfoStore } from "@/stores/carbaseinfo";
 
 const carTypeStore = useCarTypeStore();
 const PlatformStore = usePlatformStore();
+const carBaseInfoStore = useCarBaseInfoStore()
 
 // carTypeList 汽车类别：suv、轿车...
 const { carTypeList } = storeToRefs(carTypeStore);
 const { platformList } = storeToRefs(PlatformStore);
+const {carBaseInfoSelectIdList} = storeToRefs(carBaseInfoStore)
 
 
 
