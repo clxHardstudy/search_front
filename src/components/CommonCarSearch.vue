@@ -3,9 +3,6 @@
         <!-- 搜索表单区域 -->
         <div class="search-form">
             <el-form :inline="true" :model="formInline" class="demo-form-inline">
-                <el-form-item label="车型名称">
-                    <el-input v-model="formInline.name" placeholder="请输入..." clearable />
-                </el-form-item>
                 <el-form-item label="轴距">
                     <el-input v-model="formInline.wheelbase" placeholder="示例：2880 或 2880-3000" clearable />
                 </el-form-item>
@@ -16,7 +13,7 @@
                     <el-input v-model="formInline.rear_track" placeholder="示例：2880 或 2880-3000" clearable />
                 </el-form-item>
                 <el-form-item>
-                    <el-button type="primary" @click="onSubmit" :loading="isLoading">查询</el-button>
+                    <el-button plain type="primary" @click="onSubmit" :loading="isLoading">查询</el-button>
                 </el-form-item>
             </el-form>
         </div>
@@ -32,21 +29,37 @@
                 <el-table-column prop="platform_name" label="所属平台" min-width="100" />
                 <el-table-column prop="release_date" label="发布时间" min-width="150" />
 
-                <!-- 操作列 -->
                 <el-table-column label="操作" min-width="100" align="center">
                     <template #default="scope">
-                        <el-button type="success" size="small" @click="handleEdit(scope.row)">编辑</el-button>
+                        <el-button v-if="InfoRow === scope.row.id" type="danger" size="small" @click="handleExitInfo">
+                            退出
+                        </el-button>
+                        <el-button v-else type="info" size="small" @click="handleInfo(scope.row)"
+                            :disabled="InfoRow !== null || editingRow !== null">
+                            查看
+                        </el-button>
+                        <el-button v-if="editingRow === scope.row.id" type="danger" size="small"
+                            @click="handleExitEdit">
+                            退出
+                        </el-button>
+                        <el-button v-else type="success" size="small" @click="handleEdit(scope.row)"
+                            :disabled="InfoRow !== null || editingRow !== null">
+                            编辑
+                        </el-button>
                     </template>
                 </el-table-column>
             </el-table>
         </div>
 
         <el-divider />
+        <!-- 只有当有行在编辑时，显示工况详情的表单 -->
+        <div class="form-container" v-if="(editingRow !== null || InfoRow !== null) && finalResult.title.length > 0">
+            <el-form-item label="模块">
+                <el-select class="modulesSelect" v-model="value" placeholder="选择模块：默认为前模块" style="width: 33%">
+                    <el-option v-for="item in options" :key="item.value" :label="item.label" :value="item.value" />
+                </el-select>
+            </el-form-item>
 
-        <div class="form-container" v-if="finalResult.title.length > 0">
-            <el-select class="modulesSelect" v-model="value" clearable placeholder="请选择模块" style="width: 33%">
-                <el-option v-for="item in options" :key="item.value" :label="item.label" :value="item.value" />
-            </el-select>
             <!-- 外层容器，控制整个 flex 布局 -->
             <div class="form-row">
                 <div v-for="(titleItem, index) in finalResult.title" :key="index" class="form-column">
@@ -55,17 +68,18 @@
                         <el-form-item v-for="(detail, detailIndex) in titleItem.workingConditionsDetails"
                             :key="detailIndex" :label="detail.name">
                             <el-input
-                                v-model="finalResult.data[value][titleItem.workingCondition.name_en][detail.name_en]" />
+                                v-model="finalResult.data[value][titleItem.workingCondition.name_en][detail.name_en]"
+                                :disabled="Boolean(InfoRow)" />
                         </el-form-item>
                     </el-form>
                 </div>
             </div>
 
-            <el-form-item class="btn">
-                <el-button type="primary" @click="onSubmitEdit">提交</el-button>
+            <el-form-item class="btn" v-if="editingRow !== null && finalResult.title.length > 0">
+                <el-button :plain="true" type="primary" :loading="isLoadingSubmitWorkingConditions"
+                    @click="onSubmitEdit">提交</el-button>
             </el-form-item>
         </div>
-
     </div>
 </template>
 
@@ -75,6 +89,7 @@ import { useCarBaseInfoStore } from "../stores/carbaseinfo";
 import { useWorkingConditionsStore } from "../stores/workingconditions";
 import { useCarSearchStore } from "@/stores/carsearch";
 import { storeToRefs } from "pinia";
+import { ElNotification } from 'element-plus'
 import { da, de } from "element-plus/es/locales.mjs";
 import { SCOPE } from "element-plus";
 
@@ -94,7 +109,6 @@ const { updateWorkingConditions } = carSearchStore
 
 // 定义表单相关的状态
 const formInline = reactive({
-    name: "",
     wheelbase: "",
     front_track: "",
     rear_track: "",
@@ -102,6 +116,7 @@ const formInline = reactive({
 
 // 加载状态
 const isLoading = ref(false); // 查询按钮的加载状态
+const isLoadingSubmitWorkingConditions = ref(false)
 
 // 转换后的汽车基本信息列表，计算汽车类型名称和平台名称
 const transformedCarBaseInfoList = computed(() => {
@@ -112,9 +127,14 @@ const transformedCarBaseInfoList = computed(() => {
         4: "M1X",
         5: "Benchmark",
     };
+    const CarTypeMap: { [key: number]: string } = {
+        1: "轿车",
+        2: "SUV",
+        3: "MPV",
+    };
     return carBaseInfoList.map((item) => ({
         ...item,
-        car_type_name: item.car_type_id === 1 ? "轿车" : item.car_type_id === 2 ? "SUV" : item.car_type_id === 3 ? "MPV" : "其他",
+        car_type_name: CarTypeMap[item.car_type_id as keyof typeof CarTypeMap] || "未知",
         platform_name: platformMap[item.platform_id as keyof typeof platformMap] || "未知", // 显式转换 platform_id 的类型
     }));
 });
@@ -125,7 +145,7 @@ const onSubmit = async () => {
         const data = await searchNewCarByMultipleConditionQuery({
             car_type_id: Number(selectedCarTypeId_ts.value),
             platform_id_list: selectedPlatformList_ts.value,
-            name: formInline.name,
+            // name: formInline.name,
             wheelbase: formInline.wheelbase,
             front_track: formInline.front_track,
             rear_track: formInline.rear_track,
@@ -134,28 +154,63 @@ const onSubmit = async () => {
         carBaseInfoStore.carBaseInfoList.splice(0, carBaseInfoStore.carBaseInfoList.length, ...data); // 更新表格数据
     } finally {
         isLoading.value = false; // 查询完成后，取消加载状态
+        ElNotification({
+            title: '状态：查询成功！',
+            message: `共查询到 ${carBaseInfoStore.carBaseInfoList.length} 条数据。`,  // 显示查询到的数量
+            type: 'success',
+        })
+
     }
 };
 
 const workingConditionsData = ref<any>({ front: {}, rear: {} });
 const car_base_info_id = ref("")
 
+
+// 这里是查看和编辑按钮逻辑
+// 定义当前正在查看的行的 ID
+const InfoRow = ref<number | null>(null); // 当前查看的行 ID，默认为 null
+// 定义当前正在编辑的行的 ID
+const editingRow = ref<number | null>(null); // 当前编辑的行 ID，默认为 null
+
 // 编辑按钮点击事件
 const handleEdit = async (row: any) => {
     try {
-        // 确保 fetchData 完成后再执行后续操作
-        await fetchData(row);
+        editingRow.value = row.id; // 设置当前正在编辑的行 ID
         car_base_info_id.value = row.id
-        console.log("workingConditionsData: ", workingConditionsData.value);
-
-        // 调用函数，获取数据，确保数据获取后再处理 finalResult
+        await fetchData(row);
+        console.log("开始编辑行：", row.id);
         await fetchWorkingConditionsData();
-        // 初始化 formData，将 finalResult.data.front 的内容赋值给 formData
-        console.log("finalResult: ", finalResult);
     } catch (error) {
         console.error("编辑过程中出现错误", error);
     }
 };
+// 退出编辑按钮点击事件
+const handleExitEdit = () => {
+    editingRow.value = null; // 退出编辑，将编辑行重置为 null
+    finalResult.title = []; // 清空工况详情内容
+    value.value = "front"
+};
+
+// 编辑按钮点击事件
+const handleInfo = async (row: any) => {
+    try {
+        InfoRow.value = row.id; // 设置当前正在编辑的行 ID
+        car_base_info_id.value = row.id
+        await fetchData(row);
+        console.log("开始查看行：", row.id);
+        await fetchWorkingConditionsData();
+    } catch (error) {
+        console.error("查看过程中出现错误", error);
+    }
+};
+// 退出编辑按钮点击事件
+const handleExitInfo = () => {
+    InfoRow.value = null; // 退出编辑，将编辑行重置为 null
+    finalResult.title = []; // 清空工况详情内容
+    value.value = "front"
+};
+
 
 // 定义一个异步函数来获取数据
 const fetchData = async (row: any) => {
@@ -169,16 +224,19 @@ const fetchData = async (row: any) => {
 
 // 组件挂载时，初始化数据
 onMounted(async () => {
-  const data = await workingConditionsStore.getWorkingConditions(); // 获取工况列表数据
-  console.log(data);
-  workingConditionsList.value = data.sort((x: any, y: any) => x.id - y.id); // 根据工况 ID 对工况列表排序
-  await nextTick(); // 等待 DOM 更新
-  carBaseInfoSelectIdList.value.length = 0; // 清空数组
+    const data = await workingConditionsStore.getWorkingConditions(); // 获取工况列表数据
+    console.log(data);
+    workingConditionsList.value = data.sort((x: any, y: any) => x.id - y.id); // 根据工况 ID 对工况列表排序
+    await nextTick(); // 等待 DOM 更新
+    carBaseInfoSelectIdList.value.length = 0; // 清空数组
+    selectedCarTypeId_ts.value = ""
+    selectedPlatformList_ts.value = []
 });
 
 
 // 定义 value 为 'front' | 'rear'
-const value = ref<'front' | 'rear'>('front'); const options = [
+const value = ref<'front' | 'rear'>('front');
+const options = [
     {
         value: 'front',
         label: '前模块',
@@ -228,71 +286,6 @@ const finalResult = reactive({
     }[]
 });
 
-// // 遍历workingConditionsList，逐个获取每个工况详细信息
-// const fetchWorkingConditionsData = async () => {
-//     finalResult.title = [];
-//     for (const condition of workingConditionsList.value) {
-//         const id = condition.id;
-//         try {
-//             // 通过ID请求接口获取详细数据
-//             const response = await workingConditionsStore.getWorkingConditionDetailTitle({ working_conditions_list: [id] });
-//             // 获取接口返回的数组数据，类型为 DetailItem[]
-//             const detailList: DetailItem[] = response[id];
-
-//             finalResult.title.push({
-//                 workingCondition: {
-//                     id: condition.id,
-//                     name: condition.name,
-//                     name_en: condition.name_en
-//                 },
-//                 workingConditionsDetails: detailList.map((detail) => ({
-//                     id: detail.id,
-//                     name: detail.name,
-//                     name_en: detail.name_en
-//                 }))
-//             });
-//             // 使用 name_en 作为键
-//             const dataKey = condition.name_en;
-//             // 处理 finalResult.data 部分，将 front 和 rear 拉到最外层
-//             const firstLevelKeys = ['front', 'rear'];
-//             firstLevelKeys.forEach((levelKey) => {
-//                 // 初始化最外层的 front 或 rear 对象
-//                 if (!finalResult.data[levelKey as 'front' | 'rear']) {
-//                     finalResult.data[levelKey as 'front' | 'rear'] = {};
-//                 }
-//                 // 如果该条件的 detail 存在于 workingConditionsData 中
-//                 if (workingConditionsData.value[levelKey] && workingConditionsData.value[levelKey][dataKey]) {
-//                     // 遍历每个工况详情，将其数据存储在相应的 front 或 rear 下
-//                     finalResult.data[levelKey as 'front' | 'rear'][dataKey] = {};
-//                     detailList.forEach((detail) => {
-//                         const detailKey = detail.name_en;  // detail.name_en 对应的是具体的字段名称
-
-//                         if (workingConditionsData.value[levelKey][dataKey][0][detailKey]) {
-//                             finalResult.data[levelKey as 'front' | 'rear'][dataKey][detailKey] = workingConditionsData.value[levelKey][dataKey][0][detailKey];
-//                         } else {
-//                             console.warn(`在 data 中找不到键 ${detailKey}`);
-//                         }
-//                     });
-//                 } else {
-//                     console.warn(`在 data 中找不到一级键 ${levelKey} 或二级键 ${dataKey}`);
-//                 }
-//             });
-//             // 提前初始化 formData 中的工况数据
-//             if (!formData[condition.name_en]) {
-//                 formData[condition.name_en] = {};
-//             }
-//             detailList.forEach(detail => {
-//                 if (!formData[condition.name_en][detail.name_en]) {
-//                     formData[condition.name_en][detail.name_en] = ""; // 初始化为默认值
-//                 }
-//             });
-//             console.log("提前初始化formData：",formData)
-//         } catch (error) {
-//             console.error(`获取ID为${id}的工况详细信息失败`, error);
-//         }
-//     }
-// };
-// 遍历workingConditionsList，逐个获取每个工况详细信息
 const fetchWorkingConditionsData = async () => {
     // 清空 finalResult.title 防止数据重复
     finalResult.title = [];
@@ -338,17 +331,26 @@ const fetchWorkingConditionsData = async () => {
     }
 };
 
+const onSubmitEdit = async () => {
+    try {
+        isLoadingSubmitWorkingConditions.value = true;
 
-const onSubmitEdit = () => {
-    const coordinate_system = value.value === 'front' ? 0 : 1; // 根据选中的模块确定 coordinate_system 的值
-    // console.log(finalResult.data[value.value]);
-    updateWorkingConditions({
-        car_base_info_id: Number(car_base_info_id.value),
-        coordinate_system: coordinate_system, // 动态设置 coordinate_system
-        data: finalResult.data[value.value]
-    });
+        const coordinate_system = value.value === 'front' ? 0 : 1; // 根据选中的模块确定 coordinate_system 的值
+        // console.log(finalResult.data[value.value]);
+        updateWorkingConditions({
+            car_base_info_id: Number(car_base_info_id.value),
+            coordinate_system: coordinate_system, // 动态设置 coordinate_system
+            data: finalResult.data[value.value]
+        });
+    } finally {
+        isLoadingSubmitWorkingConditions.value = false;
+        ElNotification({
+            title: '状态：数据提交成功！',
+            message: `成功修改 车型名称:${car_base_info_id.value} 的K&C数据。`,  // 显示查询到的数量
+            type: 'success',
+        })
+    }
 };
-
 </script>
 
 
@@ -361,8 +363,32 @@ const onSubmitEdit = () => {
     overflow-y: auto;
 }
 
-.search-form {
-    padding: 16px;
+/* 表格 */
+.el-table {
+    border: 1px solid #dcdfe6;
+    /* 设置表格的边框 */
+    border-radius: 4px;
+    /* 设置圆角边框 */
+}
+
+.el-table th,
+.el-table td {
+    border: 1px solid #dcdfe6;
+    /* 设置表头和单元格的边框 */
+}
+
+.el-table thead {
+    background-color: #f5f7f9;
+    /* 设置表头背景色 */
+}
+
+/* search-form表单 */
+.demo-form-inline .el-input {
+    --el-input-width: 220px;
+}
+
+.demo-form-inline .el-select {
+    --el-select-width: 220px;
 }
 
 .table-container {

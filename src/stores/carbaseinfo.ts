@@ -22,7 +22,7 @@ export const useCarBaseInfoStore = defineStore('carbaseinfo', () => {
     const carBaseInfoList = reactive<CarBaseInfo[]>([])
 
     // 这是单独选择车辆的时候使用的，如果这个对象不为空，则在页面中显示的是这个对象中的数据
-    const carBaseInfoSelectIdList = reactive<number[]>([]);
+    const carBaseInfoSelectIdList = ref<number[]>([]);
 
 
     // 车型选择时的 选择车型的id 响应式更新
@@ -142,7 +142,7 @@ export const useCarBaseInfoStore = defineStore('carbaseinfo', () => {
         car_type_id: number,
         platform_id_list: Array<number>,
         wheelbase: string,
-        name: string,
+        // name: string,
         front_track: string,
         rear_track: string,
         car_base_info_id_list: Array<number>

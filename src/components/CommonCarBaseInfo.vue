@@ -3,9 +3,6 @@
     <!-- 搜索表单区域 -->
     <div class="search-form">
       <el-form :inline="true" :model="formInline" class="demo-form-inline">
-        <el-form-item label="车型名称">
-          <el-input v-model="formInline.name" placeholder="请输入..." clearable />
-        </el-form-item>
         <el-form-item label="轴距">
           <el-input v-model="formInline.wheelbase" placeholder="示例：2880 或 2880-3000" clearable />
         </el-form-item>
@@ -16,7 +13,7 @@
           <el-input v-model="formInline.rear_track" placeholder="示例：2880 或 2880-3000" clearable />
         </el-form-item>
         <el-form-item>
-          <el-button type="primary" @click="onSubmit" :loading="isLoading">查询</el-button>
+          <el-button plain type="primary" @click="onSubmit" :loading="isLoading">查询</el-button>
         </el-form-item>
       </el-form>
     </div>
@@ -42,8 +39,8 @@
         <!-- 左侧：工况选择部分 -->
         <div class="left-column">
           <!-- 坐标选择 -->
-          <el-form-item label="坐标">
-            <el-select v-model="formWorkingConditions.coordinate" placeholder="选择坐标系：默认为前模块" style="width: 60%;">
+          <el-form-item label="模块">
+            <el-select v-model="formWorkingConditions.coordinate" placeholder="选择模块：默认为前模块" style="width: 66%;">
               <el-option label="前模块" value="0" />
               <el-option label="后模块" value="1" />
             </el-select>
@@ -63,9 +60,11 @@
         <div class="right-column" :style="{ maxHeight: leftColumnHeight + 'px', overflowY: 'auto' }">
           <el-form-item label="工况详细">
             <div v-for="detail in selectedWorkingConditions" :key="detail.id">
+              <!-- 工况标题 -->
               <span style="margin-right: 10px;">{{ detail.name }}</span>
               <el-checkbox :value="detail.id" v-model="allSelected[detail.id]"
                 @change="toggleSelectAll(detail.id, allSelected[detail.id])">全选</el-checkbox>
+              <!-- 工况详细内容 -->
               <el-checkbox-group v-model="formWorkingConditions.WorkingConditionsDetail">
                 <el-checkbox v-for="workingConditionsDetail in workingConditionsDetailObj[detail.id]"
                   :key="workingConditionsDetail.id" :value="`${detail.id}-${workingConditionsDetail.id}`"
@@ -80,7 +79,7 @@
 
       <!-- 提交按钮 -->
       <div class="form-actions">
-        <el-button type="primary" @click="onSubmitWorkingConditions"
+        <el-button :plain="true" type="primary" @click="onSubmitWorkingConditions"
           :loading="isLoadingWorkingConditions">查询</el-button>
         <el-button type="success" @click="toggleMerge">{{ mergeButtonLabel }}</el-button>
       </div>
@@ -106,6 +105,7 @@ import { useWorkingConditionsStore } from "../stores/workingconditions";
 import { useFilterDataStore } from "@/stores/filterdata";
 import { storeToRefs } from "pinia";
 import type { TableColumnCtx } from 'element-plus'
+import { ElNotification } from 'element-plus'
 import { useUtilsStore } from "@/stores/utils";
 
 // 从 carBaseInfoStore 中获取汽车基本信息相关的函数和状态
@@ -123,7 +123,7 @@ const { groupWorkingConditionsDetail, extractWorkingConditionsDetails, updateKey
 
 // 定义表单相关的状态
 const formInline = reactive({
-  name: "",
+  // name: "",
   wheelbase: "",
   front_track: "",
   rear_track: "",
@@ -165,21 +165,24 @@ interface ConditionDetail {
 
 // 转换后的汽车基本信息列表，计算汽车类型名称和平台名称
 const transformedCarBaseInfoList = computed(() => {
-  const platformMap: { [key: number]: string } = {
-    1: "T1X",
-    2: "T2X",
-    3: "E0X",
-    4: "M1X",
-    5: "Benchmark",
-  };
-
-  return carBaseInfoList.map((item) => ({
-    ...item,
-    car_type_name: item.car_type_id === 1 ? "轿车" : item.car_type_id === 2 ? "SUV" : item.car_type_id === 3 ? "MPV" : "其他",
-    platform_name: platformMap[item.platform_id as keyof typeof platformMap] || "未知", // 显式转换 platform_id 的类型
-  }));
+    const platformMap: { [key: number]: string } = {
+        1: "T1X",
+        2: "T2X",
+        3: "E0X",
+        4: "M1X",
+        5: "Benchmark",
+    };
+    const CarTypeMap: { [key: number]: string } = {
+        1: "轿车",
+        2: "SUV",
+        3: "MPV",
+    };
+    return carBaseInfoList.map((item) => ({
+        ...item,
+        car_type_name: CarTypeMap[item.car_type_id as keyof typeof CarTypeMap] || "未知",
+        platform_name: platformMap[item.platform_id as keyof typeof platformMap] || "未知", // 显式转换 platform_id 的类型
+    }));
 });
-
 
 // 获取选中的汽车 ID 列表
 const car_id_list = computed(() => carBaseInfoList.map(car => car.id));
@@ -226,7 +229,7 @@ const onSubmit = async () => {
     const data = await searchNewCarByMultipleConditionQuery({
       car_type_id: Number(selectedCarTypeId_ts.value),
       platform_id_list: selectedPlatformList_ts.value,
-      name: formInline.name,
+      // name: formInline.name,
       wheelbase: formInline.wheelbase,
       front_track: formInline.front_track,
       rear_track: formInline.rear_track,
@@ -235,11 +238,17 @@ const onSubmit = async () => {
     carBaseInfoStore.carBaseInfoList.splice(0, carBaseInfoStore.carBaseInfoList.length, ...data); // 更新表格数据
   } finally {
     isLoading.value = false; // 查询完成后，取消加载状态
+    ElNotification({
+      title: '状态：查询成功！',
+      message: `共查询到 ${carBaseInfoStore.carBaseInfoList.length} 条数据。`,  // 显示查询到的数量
+      type: 'success',
+    })
   }
 };
 
 // 工况查询按钮点击事件
 const onSubmitWorkingConditions = async () => {
+  let workingConditionsDetailGrouped = {}; // 在函数顶部声明变量
   try {
     isLoadingWorkingConditions.value = true; // 设置工况查询按钮加载状态
 
@@ -251,7 +260,7 @@ const onSubmitWorkingConditions = async () => {
     console.log("KC数据：", data);
 
     // 分组工况详细ID
-    const workingConditionsDetailGrouped = groupWorkingConditionsDetail(formWorkingConditions.WorkingConditionsDetail);
+    workingConditionsDetailGrouped = groupWorkingConditionsDetail(formWorkingConditions.WorkingConditionsDetail);
     console.log("分组工况详细ID:", workingConditionsDetailGrouped)
     // 提取工况详细内容
     const extractedDetails = extractWorkingConditionsDetails(
@@ -278,6 +287,25 @@ const onSubmitWorkingConditions = async () => {
 
   } finally {
     isLoadingWorkingConditions.value = false; // 工况查询完成后，取消加载状态
+    if (selectedWorkingConditions.value.length === 0) {
+      ElNotification({
+        title: '状态：查询失败！',
+        message: `请选择需要查询的工况！`,
+        type: 'warning',
+      })
+    } else if (Object.keys(workingConditionsDetailGrouped).length === 0) {
+      ElNotification({
+        title: '状态：查询失败！',
+        message: `请选择待查询工况的工况详细！`,
+        type: 'warning',
+      });
+    } else {
+      ElNotification({
+        title: '状态：查询成功！',
+        message: `K&C 参数查询成功`,
+        type: 'success',
+      })
+    }
   }
 };
 
@@ -338,6 +366,8 @@ onMounted(async () => {
   if (leftColumnEl) {
     leftColumnHeight.value = leftColumnEl.scrollHeight; // 设置左侧工况选择区域的高度，用于限制右侧滚动区域的高度
   }
+  selectedCarTypeId_ts.value = ""
+  selectedPlatformList_ts.value = []
   carBaseInfoSelectIdList.value = [];
 });
 
@@ -484,30 +514,12 @@ watch(() => formWorkingConditions.WorkingConditionsDetail, (newVal) => {
   --el-select-width: 220px;
 }
 
-/* echarts */
-.chart-area {
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  height: 400px;
-  /* 设置固定高度或相对高度 */
-}
-
-.chart-container {
-  width: 100%;
-  /* 占父容器宽度 */
-  height: 100%;
-  /* 占父容器高度 */
-  position: relative;
-}
-
 
 /* 工况区域的样式 */
 .working-conditions {
   display: flex;
   flex-direction: column;
   gap: 20px;
-
 }
 
 .flex-container {

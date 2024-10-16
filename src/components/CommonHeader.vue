@@ -105,6 +105,7 @@ function selectCarType(carType: { id: string; name: string } | null) {
   } else {
     selectedCarType.value.id = null;
     selectedCarType.value.name = "全部";
+    carBaseInfoStore.selectedCarTypeId_ts = null
   }
   fetchData();
 }
@@ -175,10 +176,9 @@ watch(platformValue, (val) => {
 })
 
 watch(carShowValue, (val) => {
-  if (val.length !== 0) {
-    const numberVal = val.map(v => Number(v));
-    carBaseInfoSelectIdList.value = numberVal
-  }
+  console.log("val: ",val)
+  const numberVal = val.map(v => Number(v));
+  carBaseInfoSelectIdList.value = numberVal
 });
 
 
