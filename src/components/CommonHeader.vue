@@ -26,7 +26,7 @@
     </el-menu-item>
 
     <el-menu-item index="4">
-      <el-select-v2 v-model="platformValue" :options="platformOptions" multiple clearable collapse-tags
+      <el-select-v2 v-model="platformValue" :options="platformOptions" filterable multiple clearable collapse-tags
         placeholder="请选择平台" popper-class="custom-header" :max-collapse-tags="1" style="width: 240px">
         <template #header>
           <el-checkbox v-model="platformCheckAll" :indeterminate="platformIndeterminate"
