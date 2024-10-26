@@ -43,6 +43,22 @@
       </el-select-v2>
     </el-menu-item>
 
+    <!-- 车型选择菜单 -->
+    <el-sub-menu index="6">
+      <template #title>{{ modulesMenuTitle }}</template>
+
+      <!-- 车型显示渲染 -->
+      <el-menu-item v-show="isModulesList" v-for="modules in ModulesList" :key="modules.id"
+        :index="'modules-' + String(modules.id)" @click="selectModules(modules)">
+        {{ modules.name }}
+      </el-menu-item>
+    </el-sub-menu>
+    <!-- 模块展示 -->
+    <el-menu-item class="fixed-width" index="7" disabled>
+      {{ selectedModules.name || modulesDisabledTitle }}
+    </el-menu-item>
+
+
 
   </el-menu>
 </template>
@@ -52,6 +68,8 @@ import { ref, computed, onMounted, watch, watchEffect } from "vue";
 import { useCarBaseInfoStore } from "@/stores/carbaseinfo";
 import { useCarTypeStore } from "@/stores/cartype";
 import { usePlatformStore } from "@/stores/platform";
+import { useModulesStore } from "@/stores/modules";
+
 import { storeToRefs } from "pinia";
 import type { CheckboxValueType } from 'element-plus'
 
@@ -62,13 +80,19 @@ const props = defineProps<{
   carTypeList?: Array<{ id: string; name: string }>;
 }>();
 
-// activeIndex 的值控制菜单的高亮
-const activeIndexCarType = ref("all-car-type");
 // 使用对象存储选中的车型信息
 const selectedCarType = ref<{ id: string | null; name: string | null }>({
   id: null,
   name: null,
 });
+
+// 使用对象存储选中的车型信息
+const selectedModules = ref<{ id: string | null; name: string | null; name_en: string | null }>({
+  id: null,
+  name: null,
+  name_en: null,
+});
+
 
 const platformOptions = ref<{ value: string; label: string }[]>([]);
 const carShowOptions = ref<{ value: string; label: string }[]>([]);
@@ -78,19 +102,27 @@ const carShowOptions = ref<{ value: string; label: string }[]>([]);
 const carBaseInfoStore = useCarBaseInfoStore();
 const carTypeStore = useCarTypeStore();
 const platformStore = usePlatformStore();
+const modulesStore = useModulesStore()
 
 const { carTypeList, getCarType } = carTypeStore;
-
 const { platformList, getPlatform } = platformStore;
 
-const { carBaseInfoSelectIdList } = storeToRefs(carBaseInfoStore)
-const { getAllCarBaseInfo, getCarBaseInfoList, getCarByCarTypeAndPlatform } = carBaseInfoStore;
+const { ModulesList } = storeToRefs(modulesStore);
+const { getModules } = modulesStore;
+
+const { carBaseInfoSelectIdList, selectedCarTypeId_ts, selectedPlatformList_ts } = storeToRefs(carBaseInfoStore)
+const { getAllCarBaseInfo, getCarBaseInfoList, getCarByCarTypeAndPlatform, searchNewCarByMultipleConditionQuery } = carBaseInfoStore;
 
 // 计算属性，用于动态确定标题
 const carTypeMenuTitle = computed(() => props.carTypeList?.length ? "车型选择" : "选择");
 const carTypeDisabledTitle = computed(() => props.carTypeList?.length ? "全部" : "选择");
 
+const modulesDisabledTitle = "K&C"
+
+const modulesMenuTitle = "模块选择"
+
 const isCarTypeList = computed(() => !!props.carTypeList?.length);
+const isModulesList = computed(() => !!ModulesList.value?.length);
 
 const handleSelect = (key: string) => {
   // 处理菜单选择
@@ -109,11 +141,22 @@ function selectCarType(carType: { id: string; name: string } | null) {
   }
   fetchData();
 }
+// 选择模块
+function selectModules(modules: { id: string; name: string; name_en: string } | null) {
+  if (modules) {
+    // console.log("modules: ",modules)
+    selectedModules.value.id = modules.id;
+    selectedModules.value.name = modules.name;
+    carBaseInfoStore.selectedModuleId_ts = modules.id
+    console.log(selectedModules.value)
+  }
+}
 
 // 加载数据
 onMounted(async () => {
   const carTypeData = await getCarType();
   const platformData = await getPlatform();
+  ModulesList.value = await getModules();
   carTypeData.sort((x: any, y: any) => Number(x.id) - Number(y.id));
   platformData.sort((x: any, y: any) => Number(x.id) - Number(y.id));
   carTypeStore.carTypeList.splice(0, carTypeStore.carTypeList.length, ...carTypeData);
@@ -175,10 +218,20 @@ watch(platformValue, (val) => {
   fetchData();
 })
 
-watch(carShowValue, (val) => {
-  console.log("val: ",val)
+watch(carShowValue, async (val) => {
+  console.log("val: ", val)
   const numberVal = val.map(v => Number(v));
   carBaseInfoSelectIdList.value = numberVal
+  const data = await searchNewCarByMultipleConditionQuery({
+    car_type_id: Number(selectedCarTypeId_ts.value),
+    platform_id_list: selectedPlatformList_ts.value,
+    // name: formInline.name,
+    wheelbase: '',
+    front_track: '',
+    rear_track: '',
+    car_base_info_id_list: carBaseInfoSelectIdList.value
+  })
+  carBaseInfoStore.carBaseInfoList.splice(0, carBaseInfoStore.carBaseInfoList.length, ...data); // 更新表格数据
 });
 
 

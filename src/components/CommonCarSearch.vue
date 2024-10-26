@@ -20,16 +20,20 @@
         <!-- 表格显示区域 -->
         <div>
             <el-table :data="transformedCarBaseInfoList" style="width: 100%; table-layout: auto" height="400">
-                <el-table-column fixed prop="id" label="序号" min-width="100" />
-                <el-table-column fixed prop="name" label="车型名称" min-width="180" />
-                <el-table-column prop="wheelbase" label="轴距" min-width="120" />
-                <el-table-column prop="front_track" label="前轮距" min-width="120" />
-                <el-table-column prop="rear_track" label="后轮距" min-width="120" />
+                <el-table-column fixed prop="id" label="序号" min-width="50" />
+                <el-table-column fixed prop="name" label="车型名称" min-width="150" />
+                <el-table-column prop="wheelbase" label="轴距" min-width="80" />
+                <el-table-column prop="front_track" label="前轮距" min-width="80" />
+                <el-table-column prop="rear_track" label="后轮距" min-width="80" />
+                <el-table-column prop="price_range" label="售价区间" min-width="80" />
+                <el-table-column prop="curb_weight" label="整备质量" min-width="80" />
+                <el-table-column prop="maximum_front_axle_mass" label="前轴最大质量" min-width="100" />
+                <el-table-column prop="maximum_rear_axle_mass" label="后轴最大质量" min-width="100" />
                 <el-table-column prop="car_type_name" label="所属型号" min-width="100" />
                 <el-table-column prop="platform_name" label="所属平台" min-width="100" />
-                <el-table-column prop="release_date" label="发布时间" min-width="150" />
+                <el-table-column prop="release_date" label="发布时间" min-width="120" />
 
-                <el-table-column label="操作" min-width="100" align="center">
+                <el-table-column label="操作" min-width="150" align="center">
                     <template #default="scope">
                         <el-button v-if="InfoRow === scope.row.id" type="danger" size="small" @click="handleExitInfo">
                             退出
@@ -128,7 +132,7 @@ const transformedCarBaseInfoList = computed(() => {
         5: "Benchmark",
     };
     const CarTypeMap: { [key: number]: string } = {
-        1: "轿车",
+        1: "SD",
         2: "SUV",
         3: "MPV",
     };

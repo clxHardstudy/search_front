@@ -12,7 +12,7 @@
       <router-link to="/cartype">
         <el-menu-item index="/cartype">
           <car-icon />
-          <span>车型管理</span>
+          <span>汽车管理</span>
         </el-menu-item>
       </router-link>
 
@@ -20,6 +20,13 @@
         <el-menu-item index="/info">
           <platform-icon />
           <span>信息管理</span>
+        </el-menu-item>
+      </router-link>
+
+      <router-link to="/data_import">
+        <el-menu-item index="/data_import">
+          <platform-icon />
+          <span>数据导入</span>
         </el-menu-item>
       </router-link>
 

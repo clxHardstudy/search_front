@@ -9,6 +9,10 @@ interface CarBaseInfo {
     front_track: string,
     rear_track: string,
     release_date: Date,
+    price_range: string,
+    curb_weight: string,
+    maximum_front_axle_mass: string,
+    maximum_rear_axle_mass: string
     create_time: number,
     update_time: number,
     car_type_id: number,
@@ -28,6 +32,7 @@ export const useCarBaseInfoStore = defineStore('carbaseinfo', () => {
     // 车型选择时的 选择车型的id 响应式更新
     const selectedCarTypeId_ts = ref<string | null>(null);  // 添加 selectedCarTypeId
     const selectedPlatformList_ts = ref<Array<number>>([]); // 定义为数字数组类型
+    const selectedModuleId_ts = ref<string>("1");
 
     // 获取 cartype 表中所有汽车数据
     async function getAllCarBaseInfo() {
@@ -161,7 +166,7 @@ export const useCarBaseInfoStore = defineStore('carbaseinfo', () => {
 
 
     return {
-        carBaseInfoList, carBaseInfoSelectIdList, selectedCarTypeId_ts, selectedPlatformList_ts,
+        carBaseInfoList, carBaseInfoSelectIdList, selectedCarTypeId_ts, selectedPlatformList_ts, selectedModuleId_ts,
         getAllCarBaseInfo, getCarBaseInfoList, getCarOrSUV, searchCarByName, getCarByCarTypeAndPlatform,
         searchCarByWheelbase, searchCarByNameAndWheelbase, searchCarByMultipleConditionQuery, searchNewCarByMultipleConditionQuery
     }

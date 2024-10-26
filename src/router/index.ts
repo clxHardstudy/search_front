@@ -2,6 +2,7 @@
 import Main from "@/views/Main.vue";
 import PlatForm from "@/views/Info.vue";
 import CarType from "@/views/CarType.vue";
+import DataImport from "@/views/DataImport.vue";
 
 import { createRouter,createWebHistory } from "vue-router";
 
@@ -22,6 +23,10 @@ const router = createRouter({
         {
             path:'/cartype',
             component:CarType
+        },
+        {
+            path:'/data_import',
+            component:DataImport
         },
 
     ]
