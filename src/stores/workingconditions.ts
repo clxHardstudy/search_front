@@ -2,7 +2,7 @@ import { ref, computed, reactive } from 'vue'
 import { defineStore } from 'pinia'
 import axios from "axios";
 
-// 定义 CarType 的类型
+// 定义  的类型
 interface WorkingConditions {
     id: number;
     name: string;

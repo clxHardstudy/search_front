@@ -15,6 +15,18 @@ export const useTraditionalFourWheelDriveSystemStore = defineStore('traditional_
         }
     }
 
+    async function getTraditionalFourWheelDriveSystemModuleByModuleId(item: { "module_data_id_list": number[] }) {
+        try {
+            let result = await axios.post(
+                "http://127.0.0.1:8000/traditional_four_wheel_drive_system/son_detail_title",
+                item,
+            );
+            return result.data
+        } catch (error) {
+            alert(error)
+        }
+    }
+
     async function getTraditionalFourWheelDriveSystemModuleSonParameters() {
         try {
             let result = await axios.get(
@@ -37,9 +49,23 @@ export const useTraditionalFourWheelDriveSystemStore = defineStore('traditional_
             alert(error)
         }
     }
+
+    async function getTraditionalFourWheelDriveSystemDetailOnce(item: { "car_base_info_id": number }) {
+        try {
+            let result = await axios.post(
+                "http://127.0.0.1:8000/traditional_four_wheel_drive_system/detail_once",
+                item
+            );
+            return result.data
+        } catch (error) {
+            alert(error)
+        }
+    }
     return {
         getTraditionalFourWheelDriveSystemModule,
         getTraditionalFourWheelDriveSystemModuleSonParameters,
-        getTraditionalFourWheelDriveSystemData
+        getTraditionalFourWheelDriveSystemModuleByModuleId,
+        getTraditionalFourWheelDriveSystemData,
+        getTraditionalFourWheelDriveSystemDetailOnce
     }
 })

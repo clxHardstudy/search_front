@@ -15,6 +15,18 @@ export const useBrakingSystemStore = defineStore('braking_system', () => {
         }
     }
 
+    async function getBrakingSystemModuleByModuleId(item: { "module_data_id_list": number[] }) {
+        try {
+            let result = await axios.post(
+                "http://127.0.0.1:8000/braking_system/son_detail_title",
+                item,
+            );
+            return result.data
+        } catch (error) {
+            alert(error)
+        }
+    }
+
     async function getBrakingSystemModuleSonParameters() {
         try {
             let result = await axios.get(
@@ -37,9 +49,23 @@ export const useBrakingSystemStore = defineStore('braking_system', () => {
             alert(error)
         }
     }
+
+    async function getBrakingSystemDetailOnce(item: { "car_base_info_id": number }) {
+        try {
+            let result = await axios.post(
+                "http://127.0.0.1:8000/braking_system/detail_once",
+                item
+            );
+            return result.data
+        } catch (error) {
+            alert(error)
+        }
+    }
     return {
         getBrakingSystemModule,
         getBrakingSystemModuleSonParameters,
-        getBrakingSystemData
+        getBrakingSystemModuleByModuleId,
+        getBrakingSystemData,
+        getBrakingSystemDetailOnce
     }
 })
