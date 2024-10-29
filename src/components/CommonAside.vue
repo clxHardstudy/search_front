@@ -16,6 +16,13 @@
         </el-menu-item>
       </router-link>
 
+      <router-link to="/bubble_chart">
+        <el-menu-item index="/bubble_chart">
+          <platform-icon />
+          <span>图形绘制</span>
+        </el-menu-item>
+      </router-link>
+
       <router-link to="/info">
         <el-menu-item index="/info">
           <platform-icon />

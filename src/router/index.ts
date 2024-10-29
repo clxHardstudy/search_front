@@ -3,6 +3,7 @@ import Main from "@/views/Main.vue";
 import PlatForm from "@/views/Info.vue";
 import CarType from "@/views/CarType.vue";
 import DataImport from "@/views/DataImport.vue";
+import BubbleChart from "../views/BubbleChart.vue";
 
 import { createRouter,createWebHistory } from "vue-router";
 
@@ -24,6 +25,11 @@ const router = createRouter({
             path:'/cartype',
             component:CarType
         },
+        {
+            path:'/bubble_chart',
+            component:BubbleChart
+        },
+
         {
             path:'/data_import',
             component:DataImport

@@ -147,7 +147,6 @@ export const useCarBaseInfoStore = defineStore('carbaseinfo', () => {
         car_type_id: number,
         platform_id_list: Array<number>,
         wheelbase: string,
-        // name: string,
         front_track: string,
         rear_track: string,
         car_base_info_id_list: Array<number>
@@ -164,10 +163,25 @@ export const useCarBaseInfoStore = defineStore('carbaseinfo', () => {
         }
     }
 
+    async function getMultipleWheelbase(item: {
+        car_base_info_id_list: Array<number>
+    }) {
+        try {
+            let result = await axios.post(
+                "http://127.0.0.1:8000/car_base_info/multiple_wheelbase",
+                item,
+            );
+            console.log("请求接口：根据多条件查询所有的汽车数据");
+            return result.data
+        } catch (error) {
+            alert(error)
+        }
+    }
+
 
     return {
         carBaseInfoList, carBaseInfoSelectIdList, selectedCarTypeId_ts, selectedPlatformList_ts, selectedModuleId_ts,
-        getAllCarBaseInfo, getCarBaseInfoList, getCarOrSUV, searchCarByName, getCarByCarTypeAndPlatform,
+        getAllCarBaseInfo, getCarBaseInfoList, getCarOrSUV, searchCarByName, getCarByCarTypeAndPlatform, getMultipleWheelbase,
         searchCarByWheelbase, searchCarByNameAndWheelbase, searchCarByMultipleConditionQuery, searchNewCarByMultipleConditionQuery
     }
 })

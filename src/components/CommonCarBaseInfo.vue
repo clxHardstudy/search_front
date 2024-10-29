@@ -322,7 +322,6 @@ const onSubmit = async () => {
     const data = await searchNewCarByMultipleConditionQuery({
       car_type_id: Number(selectedCarTypeId_ts.value),
       platform_id_list: selectedPlatformList_ts.value,
-      // name: formInline.name,
       wheelbase: formInline.wheelbase,
       front_track: formInline.front_track,
       rear_track: formInline.rear_track,

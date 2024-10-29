@@ -225,7 +225,6 @@ watch(carShowValue, async (val) => {
   const data = await searchNewCarByMultipleConditionQuery({
     car_type_id: Number(selectedCarTypeId_ts.value),
     platform_id_list: selectedPlatformList_ts.value,
-    // name: formInline.name,
     wheelbase: '',
     front_track: '',
     rear_track: '',

@@ -57,7 +57,8 @@
 
         <el-divider />
         <!-- 只有当有行在编辑时，显示工况详情的表单 -->
-        <div class="form-container" v-if="(editingRow !== null || InfoRow !== null) && finalModuleResult.title.length > 0">
+        <div class="form-container"
+            v-if="(editingRow !== null || InfoRow !== null) && finalModuleResult.title.length > 0">
             <el-form-item label="模块">
                 <el-select class="modulesSelect" v-model="value" placeholder="选择模块：默认为前模块" style="width: 33%">
                     <el-option v-for="item in options" :key="item.value" :label="item.label" :value="item.value" />
@@ -69,10 +70,9 @@
                 <div v-for="(titleItem, index) in finalModuleResult.title" :key="index" class="form-column">
                     <h3>{{ titleItem.module.name }}</h3>
                     <el-form :model="finalModuleResult.data" label-width="auto">
-                        <el-form-item v-for="(detail, detailIndex) in titleItem.moduleSonParameters"
-                            :key="detailIndex" :label="detail.name">
-                            <el-input
-                                v-model="finalModuleResult.data[value][titleItem.module.name_en][detail.name_en]"
+                        <el-form-item v-for="(detail, detailIndex) in titleItem.moduleSonParameters" :key="detailIndex"
+                            :label="detail.name">
+                            <el-input v-model="finalModuleResult.data[value][titleItem.module.name_en][detail.name_en]"
                                 :disabled="Boolean(InfoRow)" />
                         </el-form-item>
                     </el-form>
@@ -123,7 +123,7 @@ const { getWorkingConditionDetailOnce, getWorkingConditionDetailTitle } = workin
 const { selectedCarTypeId_ts, selectedPlatformList_ts, selectedModuleId_ts } = storeToRefs(carBaseInfoStore); // 选中的车型类型 ID
 
 const carSearchStore = useCarSearchStore()
-const { updateWorkingConditions } = carSearchStore
+const { updateWorkingConditions, updateBrakingSystem, updateSteeringSystem, updateSuspensionSystem, updateTraditionalFourWheelDriveSystem } = carSearchStore
 
 // 定义表单相关的状态
 const formInline = reactive({
@@ -163,7 +163,6 @@ const onSubmit = async () => {
         const data = await searchNewCarByMultipleConditionQuery({
             car_type_id: Number(selectedCarTypeId_ts.value),
             platform_id_list: selectedPlatformList_ts.value,
-            // name: formInline.name,
             wheelbase: formInline.wheelbase,
             front_track: formInline.front_track,
             rear_track: formInline.rear_track,
@@ -183,7 +182,6 @@ const onSubmit = async () => {
 
 
 const moduleSystemList = ref();
-const workingConditionsData = ref<any>({ front: {}, rear: {} });
 const moduleData = ref<any>({ front: {}, rear: {} });
 const car_base_info_id = ref("")
 
@@ -196,41 +194,21 @@ const editingRow = ref<number | null>(null); // 当前编辑的行 ID，默认�
 
 // 编辑按钮点击事件
 const handleEdit = async (row: any) => {
-    // if (selectedModuleId_ts.value == "1") {
     try {
         editingRow.value = row.id; // 设置当前正在编辑的行 ID
         car_base_info_id.value = row.id
         await fetchData(row);
         console.log("开始编辑行：", row.id);
-        await fetchWorkingConditionsData();
+        await fetchModuleData();
     } catch (error) {
         console.error("编辑过程中出现错误", error);
     }
-    // } else if (selectedModuleId_ts.value == "2") {
-
-    // } else if (selectedModuleId_ts.value == "3") {
-
-    // } else if (selectedModuleId_ts.value == "4") {
-
-    // } else if (selectedModuleId_ts.value == "5") {
-
-    // }
 };
 // 退出编辑按钮点击事件
 const handleExitEdit = () => {
-    if (selectedModuleId_ts.value == "1") {
-        editingRow.value = null; // 退出编辑，将编辑行重置为 null
-        finalResult.title = []; // 清空工况详情内容
-        value.value = "front"
-    } else if (selectedModuleId_ts.value == "2") {
-
-    } else if (selectedModuleId_ts.value == "3") {
-
-    } else if (selectedModuleId_ts.value == "4") {
-
-    } else if (selectedModuleId_ts.value == "5") {
-
-    }
+    editingRow.value = null; // 退出编辑，将编辑行重置为 null
+    finalModuleResult.title = []; // 清空工况详情内容
+    value.value = "front"
 };
 
 
@@ -241,7 +219,6 @@ const handleInfo = async (row: any) => {
         car_base_info_id.value = row.id
         await fetchData(row);
         console.log("开始查看行：", row.id);
-        // await fetchWorkingConditionsData();
         console.log("moduleData.value: ", moduleData.value)
         await fetchModuleData();
     } catch (error) {
@@ -250,19 +227,9 @@ const handleInfo = async (row: any) => {
 };
 // 退出查看按钮点击事件
 const handleExitInfo = () => {
-    if (selectedModuleId_ts.value == "1") {
-        InfoRow.value = null; // 退出编辑，将编辑行重置为 null
-        finalResult.title = []; // 清空工况详情内容
-        value.value = "front"
-    } else if (selectedModuleId_ts.value == "2") {
-
-    } else if (selectedModuleId_ts.value == "3") {
-
-    } else if (selectedModuleId_ts.value == "4") {
-
-    } else if (selectedModuleId_ts.value == "5") {
-
-    }
+    InfoRow.value = null; // 退出编辑，将编辑行重置为 null
+    finalModuleResult.title = []
+    value.value = "front"
 };
 
 
@@ -319,8 +286,6 @@ onMounted(async () => {
     selectedPlatformList_ts.value = []
 });
 
-// 修改记号
-
 watch(
     selectedModuleId_ts,
     async (newVal) => {
@@ -345,9 +310,9 @@ watch(
             moduleSystemList.value = data.sort((x: any, y: any) => x.id - y.id);
         }
         await nextTick(); // 等待 DOM 更新
-        carBaseInfoSelectIdList.value.length = 0; // 清空数组
-        selectedCarTypeId_ts.value = ""
-        selectedPlatformList_ts.value = []
+        // carBaseInfoSelectIdList.value.length = 0; // 清空数组
+        // selectedCarTypeId_ts.value = ""
+        // selectedPlatformList_ts.value = []
     }
 );
 
@@ -452,14 +417,7 @@ const fetchWorkingConditionsData = async () => {
 const onSubmitEdit = async () => {
     try {
         isLoadingSubmitWorkingConditions.value = true;
-
-        const coordinate_system = value.value === 'front' ? 0 : 1; // 根据选中的模块确定 coordinate_system 的值
-        // console.log(finalResult.data[value.value]);
-        updateWorkingConditions({
-            car_base_info_id: Number(car_base_info_id.value),
-            coordinate_system: coordinate_system, // 动态设置 coordinate_system
-            data: finalResult.data[value.value]
-        });
+        await updateModuleSystemData();
     } finally {
         isLoadingSubmitWorkingConditions.value = false;
         ElNotification({
@@ -470,6 +428,46 @@ const onSubmitEdit = async () => {
     }
 };
 
+async function updateModuleSystemData() {
+    const coordinate_system = value.value === 'front' ? 0 : 1; // 根据选中的模块确定 coordinate_system 的值
+    if (selectedModuleId_ts.value == '1') {
+        updateWorkingConditions({
+            car_base_info_id: Number(car_base_info_id.value),
+            coordinate_system: coordinate_system, // 动态设置 coordinate_system
+            data: finalModuleResult.data[value.value]
+        });
+        console.log('更新K&C模块')
+    } else if (selectedModuleId_ts.value == '2') {
+        updateSuspensionSystem({
+            car_base_info_id: Number(car_base_info_id.value),
+            coordinate_system: coordinate_system, // 动态设置 coordinate_system
+            data: finalModuleResult.data[value.value]
+        });
+        console.log('更新悬架模块')
+    } else if (selectedModuleId_ts.value == '3') {
+        updateBrakingSystem({
+            car_base_info_id: Number(car_base_info_id.value),
+            coordinate_system: coordinate_system, // 动态设置 coordinate_system
+            data: finalModuleResult.data[value.value]
+        });
+        console.log('更新制动模块')
+    }
+    else if (selectedModuleId_ts.value == '4') {
+        updateSteeringSystem({
+            car_base_info_id: Number(car_base_info_id.value),
+            coordinate_system: coordinate_system, // 动态设置 coordinate_system
+            data: finalModuleResult.data[value.value]
+        });
+        console.log('更新转向模块')
+    } else if (selectedModuleId_ts.value == '5') {
+        updateTraditionalFourWheelDriveSystem({
+            car_base_info_id: Number(car_base_info_id.value),
+            coordinate_system: coordinate_system, // 动态设置 coordinate_system
+            data: finalModuleResult.data[value.value]
+        });
+        console.log('更新传动四驱模块')
+    }
+}
 
 // 定义 `finalModuleResult` 的类型
 const finalModuleResult = reactive({
