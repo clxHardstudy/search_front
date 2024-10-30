@@ -37,6 +37,13 @@
         </el-menu-item>
       </router-link>
 
+      <router-link to="/login">
+        <el-menu-item index="/login">
+          <platform-icon />
+          <span>登陆</span>
+        </el-menu-item>
+      </router-link>
+
 
     </el-menu>
   </el-aside>

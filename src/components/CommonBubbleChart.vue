@@ -804,108 +804,211 @@ const initChart = (echartsData: any) => {
     let totalHeight = 0; // 用于计算总高度
     let optionList = [];
 
-    Object.entries(echartsData.value).forEach(([key, value]) => {
-        if (key === "1") {
-            console.log("这里是轴距的数据");
-            Object.entries(value).forEach(([workingConditionsKey, datavalue]) => {
-                // 创建一个新的 option 对象
-                const option = {
-                    backgroundColor: '#ffffff', // 设置背景颜色为白色
-                    title: {
-                        text: workingConditionsKey, // 使用当前工况的名称
-                        left: '5%',
-                        top: '3%'
-                    },
-                    legend: {
-                        right: '10%',
-                        top: '3%',
-                        data: []
-                    },
-                    grid: {
-                        left: '8%',
-                        top: '10%'
-                    },
-                    xAxis: {
-                        min: 2600, // 设置横坐标的最小值
-                        max: 3200, // 设置横坐标的最大值
-                        splitLine: {
-                            lineStyle: {
-                                type: 'dashed'
-                            }
-                        },
-                    },
-                    yAxis: {
-                        splitLine: {
-                            lineStyle: {
-                                type: 'dashed'
-                            }
-                        },
-                        scale: true
-                    },
-                    series: []
-                };
+    // 这里是气泡图显示逻辑
+    // Object.entries(echartsData.value).forEach(([key, value]) => {
+    //     let title = "";
+    //     if (key === "1") {
+    //         title = "轴距";
+    //         console.log("这里是轴距的数据");
+    //     } else if (key === "2") {
+    //         title = "前轮距";
+    //         console.log("这里是前轮距的数据");
+    //         // 处理前轮距数据的逻辑
+    //     } else if (key === "3") {
+    //         title = "后轮距";
+    //         console.log("这里是后轮距的数据");
+    //         // 处理后轮距数据的逻辑
+    //     }
 
-                Object.entries(datavalue).forEach(([dataKey, dataValue]) => {
-                    // 为每个系列创建一个新的 series 对象
-                    const seriesArrayOne = {
-                        name: dataKey,
-                        data: dataValue,
-                        type: 'scatter',
-                        symbolSize: function () {
-                            return 30; // 这里可以根据需要调整符号大小
-                        },
-                        emphasis: {
-                            focus: 'series',
-                            label: {
+    //     const colorPalette = [
+    //         'red',       // 红色
+    //         'orange',    // 橙色
+    //         'yellow',    // 黄色
+    //         'green',     // 绿色
+    //         'blue',      // 蓝色
+    //         'indigo',    // 靛色
+    //         'violet'     // 紫色
+    //     ];
+    //     Object.entries(value).forEach(([workingConditionsKey, datavalue]) => {
+    //         // 创建一个新的 option 对象
+    //         const option = {
+    //             backgroundColor: '#ffffff', // 设置背景颜色为白色
+    //             title: {
+    //                 text: workingConditionsKey, // 使用当前工况的名称
+    //                 left: '5%',
+    //                 top: '3%'
+    //             },
+    //             legend: {
+    //                 right: '10%',
+    //                 top: '3%',
+    //                 data: []
+    //             },
+    //             grid: {
+    //                 left: '8%',
+    //                 top: '10%'
+    //             },
+    //             xAxis: {
+    //                 min: 2600, // 设置横坐标的最小值
+    //                 max: 3300, // 设置横坐标的最大值
+    //                 name: title, // 将 title 作为横坐标的名称
+    //                 nameLocation: 'end', // 名称放在右侧
+    //                 splitLine: {
+    //                     lineStyle: {
+    //                         type: 'dashed'
+    //                     }
+    //                 },
+    //             },
+    //             yAxis: {
+    //                 splitLine: {
+    //                     lineStyle: {
+    //                         type: 'dashed'
+    //                     }
+    //                 },
+    //                 scale: true
+    //             },
+    //             series: []
+    //         };
+
+    //         // 这里的dataKey是kc参数的名称：例如悬架刚度，悬架摩擦等；dataValue是这kc的一组参数值[轴距，kc参数名，轴距(气泡大小)，名称，右上标题]，
+    //         Object.entries(datavalue).forEach(([dataKey, dataValue], index) => {
+    //             const seriesArrayOne: echarts.SeriesOption = {
+    //                 name: dataKey,
+    //                 data: dataValue,
+    //                 type: 'scatter',
+    //                 symbolSize: (dataValue: any) => Math.sqrt(dataValue[0]) * 0.5,
+    //                 emphasis: {
+    //                     focus: 'series',
+    //                     label: {
+    //                         show: true,
+    //                         formatter: (param) => `${param.data[3]}\n${title}: ${param.data[2]}`,
+    //                         position: 'top'
+    //                     }
+    //                 },
+    //                 itemStyle: {
+    //                     shadowBlur: 10,
+    //                     shadowColor: 'rgba(120, 36, 50, 0.5)',
+    //                     shadowOffsetY: 5,
+    //                     color: colorPalette[index % colorPalette.length] // 循环使用七原色
+    //                 },
+    //             };
+    //             option.legend.data.push(dataKey); // 添加到图例中
+    //             option.series.push(seriesArrayOne); // 将系列对象添加到 series 数组中
+    //         });
+    //         optionList.push(option); // 将每个 option 添加到数组中
+    //     });
+
+
+
+    // });
+
+    // 气泡信息默认显示
+    Object.entries(echartsData.value).forEach(([key, value]) => {
+        let title = key === "1" ? "轴距" : key === "2" ? "前轮距" : "后轮距";
+        console.log(`这里是${title}的数据`);
+
+        const colorPalette = [
+            'red', 'orange', 'yellow', 'green', 'blue', 'indigo', 'violet'
+        ];
+        Object.entries(value).forEach(([workingConditionsKey, datavalue]) => {
+            let minX = Infinity;
+            let maxX = -Infinity;
+            const option = {
+                backgroundColor: '#ffffff',
+                title: {
+                    text: workingConditionsKey,
+                    left: '5%',
+                    top: '3%'
+                },
+                legend: {
+                    right: '10%',
+                    top: '1%',
+                    data: [],
+                    selected: {},
+                    textStyle: {
+                        width: 80,
+                        backgroundColor: 'transparent'
+                    }
+                },
+                toolbox: {
+                    show: true,
+                    orient: 'vertical', // 设置为竖直排列
+                    right: '5%',       // 调整位置
+                    top: '2%',         // 调整位置
+                    feature: {
+                        mark: { show: true },
+                        saveAsImage: {
+                            show: true,
+                            tooltip: {
                                 show: true,
-                                formatter: function (param) {
-                                    return param.data[3]; // 根据你的数据结构返回需要的内容
-                                },
-                                position: 'top'
                             }
-                        },
-                        itemStyle: {
-                            shadowBlur: 10,
-                            shadowColor: 'rgba(120, 36, 50, 0.5)',
-                            shadowOffsetY: 5,
-                            color: new echarts.graphic.RadialGradient(0.4, 0.3, 1, [
-                                {
-                                    offset: 0,
-                                    color: 'rgb(251, 118, 123)'
-                                },
-                                {
-                                    offset: 1,
-                                    color: 'rgb(204, 46, 72)'
-                                }
-                            ])
                         }
-                    };
-                    option.legend.data.push(dataKey); // 添加到图例中
-                    option.series.push(seriesArrayOne); // 将系列对象添加到 series 数组中
-                });
-                optionList.push(option); // 将每个 option 添加到数组中
+                    }
+                },
+                grid: { left: '8%', top: '10%' },
+                xAxis: { min: null, max: null, name: title, nameLocation: 'end', splitLine: { lineStyle: { type: 'dashed' } } },
+                yAxis: { splitLine: { lineStyle: { type: 'dashed' } }, scale: true },
+                series: []
+            };
+
+            // 计算 minX 和 maxX
+            Object.entries(datavalue).forEach(([dataKey, dataValue], index) => {
+                console.log("dataValue: ", dataValue);
+                for (const dataPoint of dataValue) {
+                    minX = Math.min(minX, dataPoint[0]);
+                    maxX = Math.max(maxX, dataPoint[0]);
+                }
+                const seriesArrayOne = {
+                    name: dataKey,
+                    data: dataValue,
+                    type: 'scatter',
+                    // 气泡大小控制
+                    symbolSize: (dataValue) => Math.sqrt(dataValue[0]) * 0.5,
+                    // 默认显示出气泡对应信息
+                    label: {
+                        show: true,
+                        formatter: (param) => `${param.data[3]}\n ${param.data[1]}`,
+                        position: 'top'
+                    },
+                    itemStyle: {
+                        shadowBlur: 10,
+                        shadowColor: 'rgba(120, 36, 50, 0.5)',
+                        shadowOffsetY: 5,
+                        color: colorPalette[index % colorPalette.length]
+                    },
+                };
+                option.legend.data.push(dataKey);
+                option.legend.selected[dataKey] = index === 0; // 默认显示第一个系列
+                option.series.push(seriesArrayOne);
             });
-            console.log("optionList: ", optionList);
-        } else if (key === "2") {
-            console.log("这里是前轮距的数据");
-            // 处理前轮距数据的逻辑
-        } else if (key === "3") {
-            console.log("这里是后轮距的数据");
-            // 处理后轮距数据的逻辑
-        }
+            // 最后设置 minX 和 maxX【横坐标区间控制】
+            option.xAxis.min = minX;
+            option.xAxis.max = maxX;
+            // 插入空字符串可以实现图例换行
+            for (let i = 0; i < option.legend.data.length; i++) {
+                // 每插入一个空字符串后，i 需要加 1，以避免影响后续插入的位置
+                if ((i + 1) % 6 === 0) {
+                    option.legend.data.splice(i + 1, 0, ""); // 在当前位置后插入空字符串
+                    i++; // 递增 i，跳过刚插入的空字符串
+                }
+            }
+            optionList.push(option);
+        });
     });
 
-    totalHeight = optionList.length * 635
+    if (optionList.length < 2) {
+        totalHeight = optionList.length * 660
+    } else {
+        totalHeight = optionList.length * 600 + 60
+    }
     // 设置 .echarts 的高度
     chartDom.value.style.height = `${totalHeight}px`;
-
     // 绘制所有图形
     optionList.forEach((option) => {
         // 创建一个新的 DOM 元素用于每个图表
         const chartContainer = document.createElement('div');
         chartContainer.style.width = '100%';
         chartContainer.style.height = '600px';
-        chartContainer.style.marginBottom = '20px'; // 添加间距
+        // chartContainer.style.marginBottom = '20px'; // 添加间距
         chartDom.value.appendChild(chartContainer); // 将新的容器添加到主容器中
         const myChart = echarts.init(chartContainer);
         myChart.setOption(option); // 使用当前选项进行渲染
@@ -994,11 +1097,5 @@ const initChart = (echartsData: any) => {
 .form-actions {
     display: flex;
     justify-content: flex-start;
-}
-
-
-/* echarts */
-.echarts {
-    height: 1000px;
 }
 </style>
