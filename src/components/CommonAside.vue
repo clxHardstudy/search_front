@@ -18,29 +18,22 @@
 
       <router-link to="/bubble_chart">
         <el-menu-item index="/bubble_chart">
-          <platform-icon />
+          <bubble-chart-icon />
           <span>图形绘制</span>
         </el-menu-item>
       </router-link>
 
       <router-link to="/info">
         <el-menu-item index="/info">
-          <platform-icon />
-          <span>信息管理</span>
+          <DataIcon />
+          <span>数据管理</span>
         </el-menu-item>
       </router-link>
 
       <router-link to="/data_import">
         <el-menu-item index="/data_import">
-          <platform-icon />
+          <DataImportIcon />
           <span>数据导入</span>
-        </el-menu-item>
-      </router-link>
-
-      <router-link to="/login">
-        <el-menu-item index="/login">
-          <platform-icon />
-          <span>登陆</span>
         </el-menu-item>
       </router-link>
 
@@ -53,7 +46,10 @@
 
 import CarIcon from "./icons/CarIcon.vue";
 import PlatformIcon from "./icons/PlatformIcon.vue";
+import BubbleChartIcon from "./icons/BubbleChartIcon.vue";
 import CheryIcon from "./icons/CheryIcon.vue";
+import DataIcon from "./icons/DataIcon.vue";
+import DataImportIcon from "./icons/DataImportIcon.vue";
 
 import { ref, computed } from "vue";
 import { useRoute } from "vue-router";

@@ -6,6 +6,7 @@
 import { ref, onMounted, nextTick } from 'vue';
 import * as echarts from 'echarts';
 
+
 const chartDom = ref(null);
 
 const data = [
@@ -57,7 +58,7 @@ const initChart = () => {
   const myChart = echarts.init(chartDom.value);
   const option = {
     backgroundColor: '#ffffff', // 设置背景颜色为白色
-    
+
     title: {
       text: 'Life Expectancy and GDP by Country',
       left: '5%',

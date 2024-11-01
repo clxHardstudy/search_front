@@ -1,6 +1,7 @@
 import { ref, computed, reactive } from 'vue'
 import { defineStore } from 'pinia'
 import axios from "axios";
+import { API_BASE_URL } from "@/config/config"
 
 interface CarBaseInfo {
     id: number;
@@ -38,7 +39,7 @@ export const useCarBaseInfoStore = defineStore('carbaseinfo', () => {
     async function getAllCarBaseInfo() {
         try {
             let result = await axios.get(
-                "http://127.0.0.1:8000/car_base_info/all_car"
+                `${API_BASE_URL}/car_base_info/all_car`
             );
             return result.data
         } catch (error) {
@@ -49,7 +50,7 @@ export const useCarBaseInfoStore = defineStore('carbaseinfo', () => {
     async function getCarBaseInfoList(item: { car_base_info_id_list: Array<number> }) {
         try {
             let result = await axios.post(
-                "http://127.0.0.1:8000/car_base_info/car_list",
+                `${API_BASE_URL}/car_base_info/car_list`,
                 item
             );
             return result.data
@@ -61,7 +62,7 @@ export const useCarBaseInfoStore = defineStore('carbaseinfo', () => {
     async function getCarOrSUV(item: { id: string }) {
         try {
             let result = await axios.post(
-                "http://127.0.0.1:8000/car_base_info/car_or_suv",
+                `${API_BASE_URL}/car_base_info/car_or_suv`,
                 item,
             );
             console.log("请求接口：获取id为", item.id, "的所有汽车数据");
@@ -74,7 +75,7 @@ export const useCarBaseInfoStore = defineStore('carbaseinfo', () => {
     async function getCarByCarTypeAndPlatform(item: { car_type_id: number, platform_id_list: Array<number> }) {
         try {
             let result = await axios.post(
-                "http://127.0.0.1:8000/car_base_info/car_type_and_platform",
+                `${API_BASE_URL}/car_base_info/car_type_and_platform`,
                 item,
             );
             console.log("请求接口：", "的所有汽车数据");
@@ -87,7 +88,7 @@ export const useCarBaseInfoStore = defineStore('carbaseinfo', () => {
     async function searchCarByName(item: { car_type_id: number, platform_id_list: Array<number>, name: string }) {
         try {
             let result = await axios.post(
-                "http://127.0.0.1:8000/car_base_info/name",
+                `${API_BASE_URL}/car_base_info/name`,
                 item,
             );
             console.log("请求接口：查询名称中携带 ", item.name, " 的所有汽车数据");
@@ -100,7 +101,7 @@ export const useCarBaseInfoStore = defineStore('carbaseinfo', () => {
     async function searchCarByWheelbase(item: { car_type_id: number, platform_id_list: Array<number>, wheelbase: string }) {
         try {
             let result = await axios.post(
-                "http://127.0.0.1:8000/car_base_info/wheelbase",
+                `${API_BASE_URL}/car_base_info/wheelbase`,
                 item,
             );
             console.log("请求接口：根据 轮距 进行搜索所有的汽车数据");
@@ -113,7 +114,7 @@ export const useCarBaseInfoStore = defineStore('carbaseinfo', () => {
     async function searchCarByNameAndWheelbase(item: { car_type_id: number, platform_id_list: Array<number>, wheelbase: string, name: string }) {
         try {
             let result = await axios.post(
-                "http://127.0.0.1:8000/car_base_info/name_and_wheelbase",
+                `${API_BASE_URL}/car_base_info/name_and_wheelbase`,
                 item,
             );
             console.log("请求接口：根据 车型名称 和 轮距 进行搜索所有的汽车数据");
@@ -133,7 +134,7 @@ export const useCarBaseInfoStore = defineStore('carbaseinfo', () => {
     }) {
         try {
             let result = await axios.post(
-                "http://127.0.0.1:8000/car_base_info/multiple_condition_query",
+                `${API_BASE_URL}/car_base_info/multiple_condition_query`,
                 item,
             );
             console.log("请求接口：根据多条件查询所有的汽车数据");
@@ -153,7 +154,7 @@ export const useCarBaseInfoStore = defineStore('carbaseinfo', () => {
     }) {
         try {
             let result = await axios.post(
-                "http://127.0.0.1:8000/car_base_info/new_multiple_condition_query",
+                `${API_BASE_URL}/car_base_info/new_multiple_condition_query`,
                 item,
             );
             console.log("请求接口：根据多条件查询所有的汽车数据");
@@ -168,7 +169,7 @@ export const useCarBaseInfoStore = defineStore('carbaseinfo', () => {
     }) {
         try {
             let result = await axios.post(
-                "http://127.0.0.1:8000/car_base_info/multiple_wheelbase",
+                `${API_BASE_URL}/car_base_info/multiple_wheelbase`,
                 item,
             );
             console.log("请求接口：根据多条件查询所有的汽车数据");

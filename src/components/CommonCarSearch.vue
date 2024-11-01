@@ -96,10 +96,12 @@ import { useBrakingSystemStore } from "@/stores/braking_system";
 import { useSteeringSystemStore } from "@/stores/steering_system";
 import { useTraditionalFourWheelDriveSystemStore } from "@/stores/traditional_four_wheel_drive_system";
 import { useCarSearchStore } from "@/stores/carsearch";
+import { useUserStore } from "@/stores/user";
 import { storeToRefs } from "pinia";
 import { ElNotification } from 'element-plus'
 import { da, de } from "element-plus/es/locales.mjs";
 import { SCOPE } from "element-plus";
+import { ElMessage } from 'element-plus'
 
 // 从 carBaseInfoStore 中获取汽车基本信息相关的函数和状态
 const carBaseInfoStore = useCarBaseInfoStore();
@@ -112,6 +114,7 @@ const SuspensionSystemStore = useSuspensionSystemStore();
 const brakingSystemStore = useBrakingSystemStore();
 const steeringSystemStore = useSteeringSystemStore();
 const traditionalFourWheelDriveSystemStore = useTraditionalFourWheelDriveSystemStore();
+const userStore = useUserStore()
 
 const { getSuspensionSystemDetailOnce } = SuspensionSystemStore
 const { getBrakingSystemDetailOnce } = brakingSystemStore
@@ -194,15 +197,26 @@ const editingRow = ref<number | null>(null); // 当前编辑的行 ID，默认�
 
 // 编辑按钮点击事件
 const handleEdit = async (row: any) => {
-    try {
-        editingRow.value = row.id; // 设置当前正在编辑的行 ID
-        car_base_info_id.value = row.id
-        await fetchData(row);
-        console.log("开始编辑行：", row.id);
-        await fetchModuleData();
-    } catch (error) {
-        console.error("编辑过程中出现错误", error);
+    const token = sessionStorage.getItem("token")
+    if (token) {
+        // const decoded = jwtDecode(token);
+        const response = await userStore.getUserOne({ token: token })
+        console.log("response: ", response)
+        if (response.name_en !== "admin") {
+            ElMessage.error('禁止！你没有此操作权限')
+            return
+        }
+        try {
+            editingRow.value = row.id; // 设置当前正在编辑的行 ID
+            car_base_info_id.value = row.id
+            await fetchData(row);
+            console.log("开始编辑行：", row.id);
+            await fetchModuleData();
+        } catch (error) {
+            console.error("编辑过程中出现错误", error);
+        }
     }
+
 };
 // 退出编辑按钮点击事件
 const handleExitEdit = () => {
@@ -422,33 +436,43 @@ const onSubmitEdit = async () => {
         isLoadingSubmitWorkingConditions.value = false;
         ElNotification({
             title: '状态：数据提交成功！',
-            message: `成功修改 车型名称:${car_base_info_id.value} 的K&C数据。`,  // 显示查询到的数量
+            message: `成功修改 车型id: ${car_base_info_id.value} 的K&C数据。`,  // 显示查询到的数量
             type: 'success',
         })
     }
 };
 
 async function updateModuleSystemData() {
+    let token;
+    if (sessionStorage.getItem("token")) {
+        token = sessionStorage.getItem("token")
+    }
+    if(!token){
+        token = ''
+    }
     const coordinate_system = value.value === 'front' ? 0 : 1; // 根据选中的模块确定 coordinate_system 的值
     if (selectedModuleId_ts.value == '1') {
         updateWorkingConditions({
             car_base_info_id: Number(car_base_info_id.value),
             coordinate_system: coordinate_system, // 动态设置 coordinate_system
-            data: finalModuleResult.data[value.value]
+            data: finalModuleResult.data[value.value],
+            token: token
         });
         console.log('更新K&C模块')
     } else if (selectedModuleId_ts.value == '2') {
         updateSuspensionSystem({
             car_base_info_id: Number(car_base_info_id.value),
             coordinate_system: coordinate_system, // 动态设置 coordinate_system
-            data: finalModuleResult.data[value.value]
+            data: finalModuleResult.data[value.value],
+            token: token
         });
         console.log('更新悬架模块')
     } else if (selectedModuleId_ts.value == '3') {
         updateBrakingSystem({
             car_base_info_id: Number(car_base_info_id.value),
             coordinate_system: coordinate_system, // 动态设置 coordinate_system
-            data: finalModuleResult.data[value.value]
+            data: finalModuleResult.data[value.value],
+            token: token
         });
         console.log('更新制动模块')
     }
@@ -456,14 +480,16 @@ async function updateModuleSystemData() {
         updateSteeringSystem({
             car_base_info_id: Number(car_base_info_id.value),
             coordinate_system: coordinate_system, // 动态设置 coordinate_system
-            data: finalModuleResult.data[value.value]
+            data: finalModuleResult.data[value.value],
+            token: token
         });
         console.log('更新转向模块')
     } else if (selectedModuleId_ts.value == '5') {
         updateTraditionalFourWheelDriveSystem({
             car_base_info_id: Number(car_base_info_id.value),
             coordinate_system: coordinate_system, // 动态设置 coordinate_system
-            data: finalModuleResult.data[value.value]
+            data: finalModuleResult.data[value.value],
+            token: token
         });
         console.log('更新传动四驱模块')
     }

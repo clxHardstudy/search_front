@@ -1,14 +1,13 @@
 import { ref, computed, reactive } from 'vue'
 import { defineStore } from 'pinia'
 import axios from "axios";
-import { API_BASE_URL } from "@/config/config";
 
-export const useLoginStore = defineStore('login', () => {
+export const useUserStore = defineStore('user', () => {
 
-    async function login(item: { username: string, password: string }) {
+    async function getUserOne(item: { token: string }) {
         try {
             let result = await axios.post(
-                `${API_BASE_URL}/user/login`,
+                "http://127.0.0.1:8000/user/one",
                 item
             );
             // console.log(result.data)
@@ -17,6 +16,5 @@ export const useLoginStore = defineStore('login', () => {
             alert(error)
         }
     }
-
-    return { login }
+    return { getUserOne }
 })

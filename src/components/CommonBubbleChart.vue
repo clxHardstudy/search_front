@@ -390,9 +390,9 @@ const onSubmitDifferentModule = async () => {
                     }
                 });
             });
-
             console.log("transformedData: ", transformedData);
 
+            finalData.value = {}
             seletedHorizontalAxis.value.forEach(element => {
                 console.log("选择的横坐标为：", element);
                 let eleKey = String(element);
@@ -804,103 +804,6 @@ const initChart = (echartsData: any) => {
     let totalHeight = 0; // 用于计算总高度
     let optionList = [];
 
-    // 这里是气泡图显示逻辑
-    // Object.entries(echartsData.value).forEach(([key, value]) => {
-    //     let title = "";
-    //     if (key === "1") {
-    //         title = "轴距";
-    //         console.log("这里是轴距的数据");
-    //     } else if (key === "2") {
-    //         title = "前轮距";
-    //         console.log("这里是前轮距的数据");
-    //         // 处理前轮距数据的逻辑
-    //     } else if (key === "3") {
-    //         title = "后轮距";
-    //         console.log("这里是后轮距的数据");
-    //         // 处理后轮距数据的逻辑
-    //     }
-
-    //     const colorPalette = [
-    //         'red',       // 红色
-    //         'orange',    // 橙色
-    //         'yellow',    // 黄色
-    //         'green',     // 绿色
-    //         'blue',      // 蓝色
-    //         'indigo',    // 靛色
-    //         'violet'     // 紫色
-    //     ];
-    //     Object.entries(value).forEach(([workingConditionsKey, datavalue]) => {
-    //         // 创建一个新的 option 对象
-    //         const option = {
-    //             backgroundColor: '#ffffff', // 设置背景颜色为白色
-    //             title: {
-    //                 text: workingConditionsKey, // 使用当前工况的名称
-    //                 left: '5%',
-    //                 top: '3%'
-    //             },
-    //             legend: {
-    //                 right: '10%',
-    //                 top: '3%',
-    //                 data: []
-    //             },
-    //             grid: {
-    //                 left: '8%',
-    //                 top: '10%'
-    //             },
-    //             xAxis: {
-    //                 min: 2600, // 设置横坐标的最小值
-    //                 max: 3300, // 设置横坐标的最大值
-    //                 name: title, // 将 title 作为横坐标的名称
-    //                 nameLocation: 'end', // 名称放在右侧
-    //                 splitLine: {
-    //                     lineStyle: {
-    //                         type: 'dashed'
-    //                     }
-    //                 },
-    //             },
-    //             yAxis: {
-    //                 splitLine: {
-    //                     lineStyle: {
-    //                         type: 'dashed'
-    //                     }
-    //                 },
-    //                 scale: true
-    //             },
-    //             series: []
-    //         };
-
-    //         // 这里的dataKey是kc参数的名称：例如悬架刚度，悬架摩擦等；dataValue是这kc的一组参数值[轴距，kc参数名，轴距(气泡大小)，名称，右上标题]，
-    //         Object.entries(datavalue).forEach(([dataKey, dataValue], index) => {
-    //             const seriesArrayOne: echarts.SeriesOption = {
-    //                 name: dataKey,
-    //                 data: dataValue,
-    //                 type: 'scatter',
-    //                 symbolSize: (dataValue: any) => Math.sqrt(dataValue[0]) * 0.5,
-    //                 emphasis: {
-    //                     focus: 'series',
-    //                     label: {
-    //                         show: true,
-    //                         formatter: (param) => `${param.data[3]}\n${title}: ${param.data[2]}`,
-    //                         position: 'top'
-    //                     }
-    //                 },
-    //                 itemStyle: {
-    //                     shadowBlur: 10,
-    //                     shadowColor: 'rgba(120, 36, 50, 0.5)',
-    //                     shadowOffsetY: 5,
-    //                     color: colorPalette[index % colorPalette.length] // 循环使用七原色
-    //                 },
-    //             };
-    //             option.legend.data.push(dataKey); // 添加到图例中
-    //             option.series.push(seriesArrayOne); // 将系列对象添加到 series 数组中
-    //         });
-    //         optionList.push(option); // 将每个 option 添加到数组中
-    //     });
-
-
-
-    // });
-
     // 气泡信息默认显示
     Object.entries(echartsData.value).forEach(([key, value]) => {
         let title = key === "1" ? "轴距" : key === "2" ? "前轮距" : "后轮距";
@@ -950,36 +853,73 @@ const initChart = (echartsData: any) => {
                 series: []
             };
 
-            // 计算 minX 和 maxX
             Object.entries(datavalue).forEach(([dataKey, dataValue], index) => {
-                console.log("dataValue: ", dataValue);
                 for (const dataPoint of dataValue) {
                     minX = Math.min(minX, dataPoint[0]);
                     maxX = Math.max(maxX, dataPoint[0]);
                 }
                 const seriesArrayOne = {
                     name: dataKey,
-                    data: dataValue,
                     type: 'scatter',
-                    // 气泡大小控制
-                    symbolSize: (dataValue) => Math.sqrt(dataValue[0]) * 0.5,
-                    // 默认显示出气泡对应信息
+                    symbolSize: (dataPoint) => Math.sqrt(dataPoint[0]) * 0.2,
+                    emphasis: {
+                        focus: 'self'
+                    },
+
                     label: {
                         show: true,
-                        formatter: (param) => `${param.data[3]}\n ${param.data[1]}`,
-                        position: 'top'
+                        formatter: (param) => `${param.data.value[3]}\n ${param.data.value[1]}`, // 使用 param.data.value 访问原始数据
+                        position: 'right'
                     },
+                    data: dataValue.map((dataPoint, dataIndex) => ({
+                        value: dataPoint, // 存储原始数据点值
+                        itemStyle: {
+                            color: colorPalette[dataIndex % colorPalette.length] // 为每个气泡分配颜色
+                        }
+                    })),
+
+                    // 下面是标签连线
+                    // label: {
+                    //     show: true,
+                    //     formatter: (param) => `${param.data.value[3]}\n ${param.data.value[1]}`, // 使用 param.data.value 访问原始数据
+                    //     position: 'right', // 将标签放置在气泡的右侧
+                    //     minMargin: 2,
+                    //     // rotate: index % 2 === 0 ? 15 : -15, // 交替旋转标签，增加视觉差异
+                    //     distance: 5, // 标签与气泡的距离
+                    // },
+                    // labelLine: {
+                    //     show: true,
+                    //     length2: 5,
+                    //     lineStyle: {
+                    //         color: '#bbb'
+                    //     }
+                    // },
+                    // labelLayout: {
+                    //     x: 5,
+                    //     moveOverlap: 'shiftY', // 使用 shiftY 减少堆叠标签
+                    //     hideOverlap: true,     // 自动隐藏重叠标签
+                    //     dodge: true,           // 允许标签闪避以防止重叠
+                    // },
+                    // symbolOffset: [index % 2 === 0 ? 10 : -10, index % 2 === 0 ? 5 : -5], // 控制气泡在x轴和y轴的偏移
+
+                    // data: dataValue.map((dataPoint, dataIndex) => ({
+                    //     value: dataPoint, // 存储原始数据点值
+                    //     itemStyle: {
+                    //         color: colorPalette[dataIndex % colorPalette.length] // 为每个气泡分配颜色
+                    //     }
+                    // })),
                     itemStyle: {
                         shadowBlur: 10,
                         shadowColor: 'rgba(120, 36, 50, 0.5)',
-                        shadowOffsetY: 5,
-                        color: colorPalette[index % colorPalette.length]
-                    },
+                        shadowOffsetY: 5
+                    }
                 };
                 option.legend.data.push(dataKey);
                 option.legend.selected[dataKey] = index === 0; // 默认显示第一个系列
                 option.series.push(seriesArrayOne);
             });
+
+
             // 最后设置 minX 和 maxX【横坐标区间控制】
             option.xAxis.min = minX;
             option.xAxis.max = maxX;
@@ -994,6 +934,32 @@ const initChart = (echartsData: any) => {
             optionList.push(option);
         });
     });
+    // 假设 optionList 是多个图的配置数组
+    optionList.forEach((option) => {
+        // 初始化 option，先隐藏所有图例
+        option.legend.data.forEach((dataKey, index) => {
+            option.legend.selected[dataKey] = index === 0; // 默认显示第一个系列
+        });
+
+        // 监听 legend 的切换事件
+        option.legend = {
+            ...option.legend,
+            selected: option.legend.selected,
+            // 监听 legend 切换事件
+            selectedMode: 'single', // 设置为单选模式
+            on: {
+                legendselectchanged: function (params) {
+                    // 获取被点击的图例项名称
+                    const selectedName = params.name;
+                    // 更新 legend 的 selected 状态，使得其他图例隐藏，仅显示被点击的图例项
+                    option.legend.data.forEach((name) => {
+                        option.legend.selected[name] = name === selectedName;
+                    });
+                }
+            }
+        };
+    });
+
 
     if (optionList.length < 2) {
         totalHeight = optionList.length * 660

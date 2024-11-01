@@ -41,3 +41,4 @@ $ npm install element-plus --save
 $ npm install echarts
 $ npm install axios
 $ npm install pinia
+npm install jwt-decode

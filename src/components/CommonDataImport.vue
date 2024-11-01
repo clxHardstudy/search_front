@@ -37,8 +37,8 @@
         <el-divider />
 
         <div class="upload">
-            <el-upload class="upload-demo" drag action="http://127.0.0.1:8000/data_import" multiple :auto-upload="false"
-                :limit="1" :on-exceed="handleExceed" ref="upload" :on-success="handleSuccess" :on-error="handleError">
+            <el-upload class="upload-demo" drag :action="getUploadUrl()" multiple :auto-upload="false" :limit="1"
+                :on-exceed="handleExceed" ref="upload" :on-success="handleSuccess" :on-error="handleError">
                 <el-icon class="el-icon--upload"><upload-filled /></el-icon>
                 <div class="el-upload__text">
                     文件拖拽到这 或者<em> 点击上传</em>
@@ -59,21 +59,28 @@
 <script lang="ts" setup>
 import { computed, reactive, onMounted, watch, ref, nextTick } from "vue";
 import { useCarBaseInfoStore } from "../stores/carbaseinfo";
+import { useUserStore } from "@/stores/user";
 import { storeToRefs } from "pinia";
 import { UploadFilled } from '@element-plus/icons-vue'
 import { ElNotification } from 'element-plus'
+import { ElMessage } from 'element-plus'
 import { genFileId } from 'element-plus'
 import type { UploadInstance, UploadProps, UploadRawFile } from 'element-plus'
-
+import { API_BASE_URL } from "@/config/config"
 
 // 从 carBaseInfoStore 中获取汽车基本信息相关的函数和状态
 const carBaseInfoStore = useCarBaseInfoStore();
 const { carBaseInfoSelectIdList } = storeToRefs(carBaseInfoStore)
 const { carBaseInfoList, searchNewCarByMultipleConditionQuery, searchCarByMultipleConditionQuery } = carBaseInfoStore;
+const userStore = useUserStore();
 
 // 从 workingConditionsStore 中获取工况相关的状态
 const { selectedCarTypeId_ts, selectedPlatformList_ts } = storeToRefs(carBaseInfoStore); // 选中的车型类型 ID
 
+// 在你的脚本中定义一个函数
+const getUploadUrl = () => {
+    return `${API_BASE_URL}/data_import`; // 使用封装的 API_BASE_URL
+};
 
 // 定义表单相关的状态
 const formInline = reactive({
@@ -162,9 +169,18 @@ const handleError = (error: any) => {
 }
 
 // 手动提交上传
-const submitUpload = () => {
-    (upload.value as any).submit()
+const submitUpload = async () => {
+    const token = sessionStorage.getItem("token");
     console.log("提交文件！")
+    if (token) {
+        const response = await userStore.getUserOne({ token: token })
+        console.log("response: ", response)
+        if (response.name_en !== "admin") {
+            ElMessage.error('禁止！你没有此操作权限')
+            return
+        }
+        (upload.value as any).submit()
+    }
 }
 
 </script>

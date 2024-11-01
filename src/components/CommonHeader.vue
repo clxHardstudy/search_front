@@ -58,8 +58,11 @@
       {{ selectedModules.name || modulesDisabledTitle }}
     </el-menu-item>
 
-
-
+    <el-menu-item class="fixed-width" index="8" @click="exitSystem">
+      <el-tooltip content="确定要退出系统吗？" placement="bottom" effect="light">
+        <ExitIcon />
+      </el-tooltip>
+    </el-menu-item>
   </el-menu>
 </template>
 
@@ -69,9 +72,11 @@ import { useCarBaseInfoStore } from "@/stores/carbaseinfo";
 import { useCarTypeStore } from "@/stores/cartype";
 import { usePlatformStore } from "@/stores/platform";
 import { useModulesStore } from "@/stores/modules";
+import ExitIcon from "@/components/icons/ExitIcon.vue";
 
 import { storeToRefs } from "pinia";
 import type { CheckboxValueType } from 'element-plus'
+import router from "@/router";
 
 
 // 定义props
@@ -252,6 +257,13 @@ watchEffect(() => {
     }));
   }
 });
+
+function exitSystem() {
+  if (sessionStorage.getItem("token")) {
+    sessionStorage.removeItem("token")
+  }
+  router.push("/login")
+}
 </script>
 
 <style scoped>

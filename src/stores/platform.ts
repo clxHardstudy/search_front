@@ -1,6 +1,7 @@
 import { ref, computed, reactive } from 'vue'
 import { defineStore } from 'pinia'
 import axios from "axios";
+import { API_BASE_URL } from "@/config/config";
 
 interface Platform {
     id: string;
@@ -12,7 +13,7 @@ export const usePlatformStore = defineStore('platform', () => {
     async function getPlatform() {
         try {
             let result = await axios.get(
-                "http://127.0.0.1:8000/platform"
+                `${API_BASE_URL}/platform`
             );
             // console.log(result.data)
             return result.data

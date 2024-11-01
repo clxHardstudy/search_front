@@ -1,6 +1,7 @@
 import { ref, computed, reactive } from 'vue'
 import { defineStore } from 'pinia'
 import axios from "axios";
+import { API_BASE_URL } from "@/config/config";
 
 // 定义 CarType 的类型
 interface CarType {
@@ -15,7 +16,7 @@ export const useCarTypeStore = defineStore('cartype', () => {
     async function getCarType() {
         try {
             let result = await axios.get(
-                "http://127.0.0.1:8000/car_type"
+                `${API_BASE_URL}/car_type`
             );
             // console.log(result.data)
             return result.data
